@@ -13,9 +13,9 @@
 
 **Referência de validação:** `pipeline/tests/fixtures/planilha_alianca_2022_mg.csv` traz o mapeamento de 2022 feito pela Aliança (MG, 66 micros × top 10). Rodar o pipeline com `ANO=2022` precisa reproduzir esses números. Esse é o teste de que os dados de 2026 estarão certos.
 
-**Status:** Etapa 0 concluída (repositório organizado, plano escrito). **Próximo passo: 1.1.**
+**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Pendente da Etapa 1:** ativar o Pages e fazer o merge em `main` (passo 1.6, ação do Yuri). **Próximo passo de código: 2.1.**
 
-**Bloqueio conhecido:** a sandbox do Claude Code na nuvem bloqueia `cdn.tse.jus.br`, `dadosabertos.tse.jus.br` e `servicodados.ibge.gov.br`. Ou os domínios são liberados nas configurações de rede do ambiente, ou o download roda no GitHub Actions (passo 1.1) ou no Mac do Yuri (`make dados`). PyPI, npm e GitHub funcionam.
+**Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
 ---
 
@@ -80,39 +80,39 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 1 — Esqueleto ponta a ponta (MG) · *Visível: o Yuri abre o app pelo Dock, busca "Nikolas" e vê a tabela de microrregiões com as duas porcentagens.*
 
-- [ ] **1.1 Download dos dados do TSE**
+- [x] **1.1 Download dos dados do TSE** → `pipeline/baixar.py` (também baixa o geobr e a correspondência TSE↔IBGE)
   - **Objetivo:** script baixa e descompacta, para `ANO` ∈ {2022, 2026}: `votacao_candidato_munzona_{ANO}.zip`, `detalhe_votacao_munzona_{ANO}.zip` e `votacao_partido_munzona_{ANO}.zip`, a partir de `https://cdn.tse.jus.br/estatistica/sead/odsele/<conjunto>/<conjunto>_{ANO}.zip`.
-  - **Onde:** `pipeline/baixar_tse.py`, `Makefile` (alvo `dados`), `.github/workflows/dados.yml` (`workflow_dispatch`, com o ano como input).
+  - **Onde:** `pipeline/baixar.py`, `Makefile` (alvo `dados`), `.github/workflows/dados.yml` (`workflow_dispatch`, com o ano como input).
   - **Verificar:** `python pipeline/baixar_tse.py --ano 2022 --uf MG` imprime contagem de linhas maior que zero, com `CD_CARGO == 6` presente. Os CSVs são `latin1`, separados por `;`. Se a sandbox bloquear, rodar o workflow no Actions e conferir o log.
   - **Cerca:** só baixar e descompactar, sem transformar. Não versionar `data/raw/`.
   - **Pesquisar antes:** confirmar no portal `dadosabertos.tse.jus.br` os nomes exatos dos conjuntos de 2026 e se já estão publicados. Os nomes de colunas podem mudar entre eleições.
 
-- [ ] **1.2 Tabela de municípios (TSE ↔ IBGE ↔ regiões)**
+- [x] **1.2 Tabela de municípios (TSE ↔ IBGE ↔ regiões)** → feita por junção espacial com o geobr, porque a API do IBGE está inacessível
   - **Objetivo:** gerar `data/processed/municipios.parquet` com `cd_tse, cd_ibge, nome, uf, regiao, meso_id, meso_nome, micro_id, micro_nome, rgint_id, rgint_nome, rgi_id, rgi_nome`.
   - **Onde:** `pipeline/municipios.py`, `config/municipios_override.csv`.
   - **Fontes:** API IBGE `/api/v1/localidades/municipios?view=nivelado` (traz micro, meso, imediata e intermediária). Correspondência TSE↔IBGE: diretório de municípios da Base dos Dados ou o repositório `betafcc/Municipios-Brasileiros-TSE` no GitHub. *Pesquisar a fonte mais atual.*
   - **Verificar:** script com asserts: todo município presente nos CSVs do TSE tem `cd_ibge` e as quatro regiões. MG tem 853 municípios, 66 micros e 12 mesos. Imprimir os municípios órfãos, que vão para o override.
   - **Cerca:** sem geometria neste passo.
 
-- [ ] **1.3 Tabelas centrais + validação contra a planilha 2022**
+- [x] **1.3 Tabelas centrais + validação contra a planilha 2022** → 4 testes passando; ver as notas em `docs/dados.md`
   - **Objetivo:** gerar `votos_cand_mun.parquet` (`ano, sq_candidato, cd_ibge, votos`), `validos_mun.parquet` (`ano, cd_ibge, validos, nominais, legenda, aptos, comparecimento`) e `candidatos.parquet` (`ano, sq_candidato, nr, nome, nome_urna, partido, federacao, uf, situacao, votos_total`).
   - **Onde:** `pipeline/tabelas.py`, `pipeline/tests/test_planilha_2022.py`.
   - **Verificar:** `pytest pipeline/tests` com `ANO=2022`. Para as 660 linhas da fixture, os votos batem exatamente e as duas porcentagens batem em ±0,0001. Casos sentinela: Barbacena tem 123.534 válidos; Nikolas tem 13.576 votos em Barbacena e 1.492.047 no total.
   - **Cerca:** se não bater, **não ajustar a fixture**. Investigar a definição de válidos (nominais vs. nominais válidos; votos de candidatos *sub judice*) e registrar a conclusão em `docs/dados.md`.
 
-- [ ] **1.4 Exportação para JSON (só MG)**
+- [x] **1.4 Exportação para JSON** → já exporta o Brasil inteiro, além dos tops por região (antecipa 3.1)
   - **Objetivo:** gerar `web/public/data/{ANO}/candidatos/index.json` (busca: id, nome, urna, partido, UF, situação, votos) e `candidatos/{sq}.json` (totais + lista por micro e por município com as duas métricas e o ranking local).
   - **Onde:** `pipeline/exportar_web.py`.
   - **Verificar:** `python pipeline/exportar_web.py --ano 2022 --uf MG` e `jq` no JSON de Nikolas mostrando 66 micros com somatório de `part_regiao_dep` igual a 1,0 (±0,001).
   - **Cerca:** só os campos que o front usa. Nada de geometria ainda.
 
-- [ ] **1.5 App web mínimo**
+- [x] **1.5 App web mínimo** → busca + perfil com abas micro/meso/imediata/intermediária (antecipa parte de 3.3)
   - **Objetivo:** Vite + React + TypeScript + React Router (`HashRouter`). Rotas `#/` (busca com nome sem acento, filtro por partido, "só eleitos" ligado) e `#/candidato/:sq` (cabeçalho e tabela de micros ordenável, expandindo para municípios).
   - **Onde:** `web/`.
   - **Verificar:** `npm --prefix web run build` sem erros. `npm --prefix web run preview` e um script Playwright `web/scripts/screenshots.mjs` que salva capturas de `#/` e `#/candidato/<sq Nikolas>` em `web/screenshots/` (gitignored). Conferir a captura.
   - **Cerca:** sem mapa e sem navegação geográfica. Visual limpo, sem perfeccionismo.
 
-- [ ] **1.6 Publicação + instalação no Dock**
+- [ ] **1.6 Publicação + instalação no Dock** → `deploy.yml` e ícones prontos; falta o Yuri ativar o Pages e fazer o merge em `main`
   - **Objetivo:** `.github/workflows/deploy.yml` roda `exportar_web.py` a partir de `data/processed/`, depois o build do web e o deploy no Pages. Incluir `manifest.webmanifest`, ícones (512/192/`apple-touch-icon`) e `<meta name="apple-mobile-web-app-capable">`.
   - **Verificar:** a URL `https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/` abre. O Yuri usa Safari › Arquivo › Adicionar ao Dock e o app abre em janela própria (requer macOS Sonoma ou posterior).
   - **Cerca:** sem service worker ainda (Etapa 6).

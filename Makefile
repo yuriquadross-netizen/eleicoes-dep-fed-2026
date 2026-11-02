@@ -25,3 +25,7 @@ teste:            ## valida contra a planilha 2022 da Aliança
 	$(PY) pipeline/baixar.py --ano 2022
 	$(PY) pipeline/tabelas.py --ano 2022 --uf MG
 	$(PY) -m pytest pipeline/tests -q
+
+geo:              ## gera os mapas por UF (web/public/geo/)
+	cd pipeline/node && npm install --silent
+	$(PY) pipeline/geometrias.py --uf $(UF)

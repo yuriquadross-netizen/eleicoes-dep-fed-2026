@@ -120,3 +120,18 @@ export function nomeLocal(uf: DadosUF, nivel: Nivel, id: number): string {
 export function normalizar(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
+
+import type { Topology } from 'topojson-specification'
+const geoCache = new Map<string, Promise<Topology>>()
+/** TopoJSON da UF com as camadas mun, micro, meso, rgi, rgint (gerado por pipeline/geometrias.py). */
+export function geo(uf: string): Promise<Topology> {
+  if (!geoCache.has(uf)) {
+    const p = fetch(`./geo/${uf}.json`).then((r) => {
+      if (!r.ok) throw new Error(`${r.status} ao carregar mapa de ${uf}`)
+      return r.json() as Promise<Topology>
+    })
+    p.catch(() => geoCache.delete(uf))
+    geoCache.set(uf, p)
+  }
+  return geoCache.get(uf)!
+}

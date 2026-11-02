@@ -13,7 +13,7 @@
 
 **Referência de validação:** `pipeline/tests/fixtures/planilha_alianca_2022_mg.csv` traz o mapeamento de 2022 feito pela Aliança (MG, 66 micros × top 10). Rodar o pipeline com `ANO=2022` precisa reproduzir esses números. Esse é o teste de que os dados de 2026 estarão certos.
 
-**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Pendente da Etapa 1:** ativar o Pages e fazer o merge em `main` (passo 1.6, ação do Yuri). **Próximo passo de código: 2.1.**
+**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Pendente da Etapa 1:** ativar o Pages e fazer o merge em `main` (passo 1.6, ação do Yuri). **Etapa 2 (mapa) concluída.** **Próximo passo de código: 3.2** (páginas de navegação geográfica; os JSON de top 10 por região já são exportados).
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -121,19 +121,19 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 2 — Mapa no perfil · *Visível: o perfil mostra o mapa do estado por microrregião, mais escuro onde ele teve mais votos.*
 
-- [ ] **2.1 Geometrias**
+- [x] **2.1 Geometrias** → `pipeline/geometrias.py` usa o geobr em vez da API do IBGE; mapshaper fixado em `pipeline/node/package.json`. `web/public/geo/` é versionado (3,4 MB, 27 UFs)
   - **Objetivo:** baixar a malha municipal por UF (API IBGE v3 `malhas/estados/{UF}?intrarregiao=municipio&formato=application/vnd.geo+json`; *verificar endpoint e qualidade*), dissolver com `mapshaper` por `micro_id`, `meso_id`, `rgi_id` e `rgint_id` usando `municipios.parquet`, simplificar e salvar `web/public/geo/{UF}.topo.json` com cinco camadas (municipio, micro, meso, rgi, rgint).
   - **Onde:** `pipeline/geometrias.py` (chama `npx mapshaper`).
   - **Verificar:** MG.topo.json com 853, 66, 12, 70 e 13 feições, respectivamente (*conferir os números de rgi e rgint de MG*). Tamanho abaixo de 1,5 MB. Um PNG renderizado de cada camada.
   - **Cerca:** só a UF do passo. A escala nacional entra na Etapa 4.
 
-- [ ] **2.2 Componente `MapaUF`**
+- [x] **2.2 Componente `MapaUF`** → quantis em 7 classes, rampa azul; no modo escuro a rampa inverte (ponta clara = mais votos), conforme a regra de legibilidade em fundo escuro
   - **Objetivo:** mapa SVG (d3-geo, projeção `geoMercator().fitSize`) com camada selecionável, escala sequencial de uma só cor (clara → escura), legenda, tooltip com nome, votos e as duas porcentagens, e seletor de métrica (votos absolutos [padrão] / % dos válidos do local / % da base dele).
   - **Onde:** `web/src/components/MapaUF.tsx`. Ler a skill `dataviz` antes de escolher paleta e escala; a escala é quantil ou raiz, nunca linear crua.
   - **Verificar:** captura do perfil do Nikolas (MG 2022) com a micro de Belo Horizonte entre as mais escuras. Clicar numa micro destaca a linha correspondente na tabela.
   - **Cerca:** o componente não busca dados; recebe props.
 
-- [ ] **2.3 Indicadores-resumo do perfil**
+- [x] **2.3 Indicadores-resumo do perfil**
   - **Objetivo:** cartões com votos totais, posição no estado, nº de municípios com voto, micro mais forte e "nº de micros para chegar a 50% da votação" (concentração).
   - **Verificar:** valores conferidos à mão em 2 candidatos (um concentrado, um disperso).
   - **Cerca:** nada de tipologia estatística aqui (ver 6.3).
@@ -142,7 +142,7 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 3 — Navegação geográfica + top 10 · *Visível: Brasil › Sudeste › MG › Triângulo › Uberlândia mostra o top 10 idêntico à planilha (no modo 2022).*
 
-- [ ] **3.1 Export das regiões:** `data/{ANO}/regioes/{tipo}/{id}.json` com o top 10 (duas métricas, partido, situação), válidos, lista de municípios e os filhos (meso→micros). `uf/{UF}.json` com eleitos da UF, bancada por partido e lista de mesos/micros. **Verificar:** o top 10 de Uberlândia 2022 começa com Ana Paula Junqueira (69.210). **Cerca:** sem ideologia ainda.
+- [x] **3.1 Export das regiões** (feito em `exportar_web.py`, inclusive top 10 por município): `data/{ANO}/regioes/{tipo}/{id}.json` com o top 10 (duas métricas, partido, situação), válidos, lista de municípios e os filhos (meso→micros). `uf/{UF}.json` com eleitos da UF, bancada por partido e lista de mesos/micros. **Verificar:** o top 10 de Uberlândia 2022 começa com Ana Paula Junqueira (69.210). **Cerca:** sem ideologia ainda.
 - [ ] **3.2 Rotas e páginas:** `#/brasil`, `#/regiao/:sigla` (UFs, cadeiras e bancada), `#/uf/:uf` (mapa clicável + eleitos), `#/r/:tipo/:id` (top 10 + mini-mapa com a região destacada + municípios). Breadcrumb em todas. **Verificar:** capturas Playwright das quatro rotas. **Cerca:** reaproveitar `MapaUF`.
 - [ ] **3.3 Seletor de divisão:** alterna "Meso/Micro (IBGE até 2017)" ↔ "Intermediária/Imediata (IBGE atual)". Guarda a escolha no `localStorage` (envolto em try/catch) e afeta mapas, perfil e navegação. **Verificar:** alternar no perfil muda camada e tabela. **Cerca:** o padrão é sempre meso/micro.
 - [ ] **3.4 Busca por partido:** `#/partido/:sigla` com candidatos da sigla por UF. **Verificar:** captura de `#/partido/PL`.

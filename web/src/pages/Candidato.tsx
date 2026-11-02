@@ -1,0 +1,244 @@
+import { Fragment, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import type { Topology } from 'topojson-specification'
+import MapaUF, { type ItemMapa } from '../components/MapaUF'
+import {
+  api, geo, nomeLocal, NOME_TIPO, NOME_UF, type DadosUF, type LinhaLocal, type Nivel, type Perfil, type Tipo,
+} from '../dados'
+import { TIPOS_DIVISAO, useDivisao } from '../divisao'
+import { num, pct, useCarregar, useTitulo } from '../formato'
+
+type Ordem = 'votos' | 'pct_local' | 'pct_base'
+const COL: Record<Ordem, number> = { votos: 1, pct_local: 3, pct_base: 4 }
+const IDX_TIPO: Record<Tipo, number> = { micro: 1, meso: 2, rgi: 3, rgint: 4 }
+
+export default function Candidato() {
+  const { sq = '' } = useParams()
+  const [dados, erro] = useCarregar(
+    () => api.perfil(sq).then(async (p) => ({ p, uf: await api.uf(p.uf), topo: await geo(p.uf) })),
+    [sq],
+  )
+  useTitulo(dados?.p.urna ?? '')
+
+  if (erro) return <p className="aviso">Candidato não encontrado ({erro}).</p>
+  if (!dados) return <p className="aviso">Carregando…</p>
+  return <Conteudo key={sq} {...dados} />
+}
+
+function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
+  const [divisao] = useDivisao()
+  const [tipo, setTipo] = useState<Tipo>(TIPOS_DIVISAO[divisao].menor)
+  const [aberto, setAberto] = useState<number | null>(null)
+  const [metrica, setMetrica] = useState<'votos' | 'pct_local'>('votos')
+  const [verMun, setVerMun] = useState(false)
+
+  const nMun = p.mun.length
+  const totalMun = Object.keys(uf.municipios).length
+  const forte = p.micro[0]
+  const ate50 = useMemo(() => {
+    let acc = 0
+    for (let i = 0; i < p.micro.length; i++) {
+      acc += p.micro[i][4]
+      if (acc >= 0.5) return i + 1
+    }
+    return p.micro.length
+  }, [p.micro])
+
+  const camada: Nivel = verMun ? 'mun' : tipo
+  const itens = useMemo(() => {
+    const m = new Map<number, ItemMapa>()
+    for (const l of p[camada]) {
+      m.set(l[0], {
+        nome: nomeLocal(uf, camada, l[0]),
+        valor: metrica === 'votos' ? l[1] : l[3],
+        detalhes: [
+          ['Votos', num(l[1])],
+          ['% do local', pct(l[3])],
+          ['% da base dele', pct(l[4])],
+          ['Posição no local', `${l[5]}º`],
+        ],
+      })
+    }
+    return m
+  }, [p, uf, camada, metrica])
+
+  const selecionar = (id: number) => {
+    const regiao = camada === 'mun' ? (uf.municipios[id]?.[IDX_TIPO[tipo]] as number) : id
+    setAberto(regiao)
+    requestAnimationFrame(() =>
+      document.getElementById(`linha-${regiao}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+    )
+  }
+
+  return (
+    <article>
+      <p className="trilha">
+        <Link to="/">Buscar</Link> › <Link to={`/uf/${p.uf}`}>{NOME_UF[p.uf]}</Link> › {p.urna}
+      </p>
+      <header className="perfil-cab">
+        <div>
+          <h1>{p.urna}</h1>
+          <p className="sub">
+            {p.nome} · <Link to={`/?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
+            {p.federacao ? ` (${p.federacao})` : ''} · nº {p.nr} · {NOME_UF[p.uf]}
+          </p>
+        </div>
+        <span className={`sit sit-${p.situacao[0]} grande`}>{p.situacao_tse.toLowerCase()}</span>
+      </header>
+
+      <div className="cartoes">
+        <Cartao rotulo="Votos válidos" valor={num(p.votos)} nota={`${pct(p.votos / uf.validos, 2)} dos válidos da UF`} />
+        <Cartao rotulo={`Posição em ${p.uf}`} valor={`${p.pos_uf}º`} nota={`de ${num(uf.n_candidatos)} candidatos com voto`} />
+        <Cartao rotulo="Municípios com voto" valor={num(nMun)} nota={`de ${num(totalMun)} em ${p.uf}`} />
+        {forte && (
+          <Cartao
+            rotulo="Microrregião mais forte"
+            valor={nomeLocal(uf, 'micro', forte[0])}
+            nota={`${pct(forte[4])} da votação dele`}
+          />
+        )}
+        <Cartao rotulo="Concentração" valor={`${ate50} micro${ate50 > 1 ? 's' : ''}`} nota="somam metade dos votos dele" />
+      </div>
+
+      <div className="abas" role="tablist">
+        {(['micro', 'meso', 'rgi', 'rgint'] as Tipo[]).map((t) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tipo === t}
+            onClick={() => {
+              setTipo(t)
+              setAberto(null)
+            }}
+          >
+            {NOME_TIPO[t].plural}
+          </button>
+        ))}
+      </div>
+
+      <div className="mapa-controles">
+        <div className="segmentado" role="group" aria-label="Métrica do mapa">
+          <button aria-pressed={metrica === 'votos'} onClick={() => setMetrica('votos')}>
+            Votos
+          </button>
+          <button aria-pressed={metrica === 'pct_local'} onClick={() => setMetrica('pct_local')}>
+            % do local
+          </button>
+        </div>
+        <label className="check">
+          <input type="checkbox" checked={verMun} onChange={(e) => setVerMun(e.target.checked)} />
+          Detalhar por município
+        </label>
+      </div>
+      <MapaUF
+        topo={topo}
+        camada={camada}
+        itens={itens}
+        formatar={metrica === 'votos' ? num : (v) => pct(v)}
+        tituloLegenda={`${metrica === 'votos' ? 'Votos' : '% dos votos válidos do local'} de ${p.urna} por ${NOME_TIPO[camada].singular.toLowerCase()}`}
+        selecionado={camada === 'mun' ? null : aberto}
+        aoSelecionar={selecionar}
+      />
+
+      <TabelaLocais p={p} uf={uf} tipo={tipo} aberto={aberto} setAberto={setAberto} />
+    </article>
+  )
+}
+
+function Cartao({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?: string }) {
+  return (
+    <div className="cartao">
+      <span className="rotulo">{rotulo}</span>
+      <strong>{valor}</strong>
+      {nota && <span className="nota">{nota}</span>}
+    </div>
+  )
+}
+
+function TabelaLocais({
+  p, uf, tipo, aberto, setAberto,
+}: {
+  p: Perfil
+  uf: DadosUF
+  tipo: Tipo
+  aberto: number | null
+  setAberto: (id: number | null) => void
+}) {
+  const [ordem, setOrdem] = useState<Ordem>('votos')
+  const linhas = useMemo(() => [...p[tipo]].sort((a, b) => b[COL[ordem]] - a[COL[ordem]]), [p, tipo, ordem])
+  const munPorRegiao = useMemo(() => {
+    const m = new Map<number, LinhaLocal[]>()
+    for (const l of p.mun) {
+      const reg = uf.municipios[l[0]]?.[IDX_TIPO[tipo]] as number
+      if (!m.has(reg)) m.set(reg, [])
+      m.get(reg)!.push(l)
+    }
+    for (const v of m.values()) v.sort((a, b) => b[COL[ordem]] - a[COL[ordem]])
+    return m
+  }, [p.mun, uf, tipo, ordem])
+
+  const Th = ({ k, children }: { k: Ordem; children: React.ReactNode }) => (
+    <th className="n">
+      <button className={ordem === k ? 'ativo' : ''} onClick={() => setOrdem(k)}>
+        {children}
+        {ordem === k ? ' ↓' : ''}
+      </button>
+    </th>
+  )
+
+  return (
+    <>
+      <p className="legenda-tab">
+        <b>% do local</b>: fatia dos votos válidos do local que foi para {p.urna}. <b>% da base</b>: fatia da
+        votação total dele que veio do local. Clique numa linha (ou no mapa) para ver os municípios.
+      </p>
+      <table className="tabela">
+        <thead>
+          <tr>
+            <th>{NOME_TIPO[tipo].singular}</th>
+            <Th k="votos">Votos</Th>
+            <Th k="pct_local">% do local</Th>
+            <Th k="pct_base">% da base</Th>
+            <th className="n">Posição</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((l) => (
+            <Fragment key={l[0]}>
+              <tr
+                id={`linha-${l[0]}`}
+                className={`clicavel${aberto === l[0] ? ' destacado' : ''}`}
+                onClick={() => setAberto(aberto === l[0] ? null : l[0])}
+              >
+                <td>
+                  <span className="seta">{aberto === l[0] ? '▾' : '▸'}</span>{' '}
+                  <Link className="sutil" to={`/r/${tipo}/${l[0]}`} onClick={(e) => e.stopPropagation()} title="Ver o top 10 desta região">
+                    {nomeLocal(uf, tipo, l[0])}
+                  </Link>
+                </td>
+                <td className="n">{num(l[1])}</td>
+                <td className="n">{pct(l[3])}</td>
+                <td className="n">{pct(l[4])}</td>
+                <td className="n">{l[5]}º</td>
+              </tr>
+              {aberto === l[0] &&
+                (munPorRegiao.get(l[0]) ?? []).map((m) => (
+                  <tr key={m[0]} className="filho">
+                    <td>
+                      <Link className="sutil" to={`/r/mun/${m[0]}`} title="Ver o top 10 do município">
+                        {nomeLocal(uf, 'mun', m[0])}
+                      </Link>
+                    </td>
+                    <td className="n">{num(m[1])}</td>
+                    <td className="n">{pct(m[3])}</td>
+                    <td className="n">{pct(m[4])}</td>
+                    <td className="n">{m[5]}º</td>
+                  </tr>
+                ))}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )
+}

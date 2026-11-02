@@ -1,0 +1,30 @@
+sigla,nome,classe,observacao
+PL,Partido Liberal,Direita,
+PP,Progressistas,Direita,Federação União Progressista
+UNIÃO,União Brasil,Direita,Federação União Progressista
+REPUBLICANOS,Republicanos,Direita,
+NOVO,Partido Novo,Direita,
+DC,Democracia Cristã,Direita,
+MISSÃO,Partido Missão,Direita,Partido novo em 2026
+PRTB,Partido Renovador Trabalhista Brasileiro,Direita,
+PSD,Partido Social Democrático,Centro,
+MDB,Movimento Democrático Brasileiro,Centro,
+PODE,Podemos,Centro,Incorporou o PSC em 2023
+AVANTE,Avante,Centro,
+SOLIDARIEDADE,Solidariedade,Centro,Federação Renovação Solidária; incorporou o PROS
+PSDB,Partido da Social Democracia Brasileira,Centro,Federação PSDB Cidadania
+CIDADANIA,Cidadania,Centro,Federação PSDB Cidadania
+PRD,Partido Renovação Democrática,Centro,Fusão PTB + Patriota; Federação Renovação Solidária
+MOBILIZA,Mobilização Nacional,Centro,Antigo PMN
+AGIR,Agir,Centro,Antigo PTC
+DEMOCRATA,Democrata,Centro,Antigo PMB
+PT,Partido dos Trabalhadores,Esquerda,Federação Brasil da Esperança
+PCDOB,Partido Comunista do Brasil,Esquerda,Federação Brasil da Esperança
+PV,Partido Verde,Esquerda,Federação Brasil da Esperança
+PSOL,Partido Socialismo e Liberdade,Esquerda,Federação PSOL Rede
+REDE,Rede Sustentabilidade,Esquerda,Federação PSOL Rede
+PSB,Partido Socialista Brasileiro,Esquerda,
+PDT,Partido Democrático Trabalhista,Esquerda,
+UP,Unidade Popular,Esquerda,
+PSTU,Partido Socialista dos Trabalhadores Unificado,Esquerda,
+PCO,Partido da Causa Operária,Esquerda,

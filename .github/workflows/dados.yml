@@ -1,0 +1,36 @@
+# Regenera data/processed/ a partir do TSE (use se o TSE republicar os arquivos).
+# Roda manualmente: Actions › Regenerar dados › Run workflow. Abre um commit no branch escolhido.
+name: Regenerar dados
+
+on:
+  workflow_dispatch:
+    inputs:
+      ano:
+        description: 'Ano da eleição'
+        default: '2026'
+        type: choice
+        options: ['2026', '2022']
+
+permissions:
+  contents: write
+
+jobs:
+  dados:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r pipeline/requirements.txt
+      - run: python pipeline/baixar.py --ano ${{ inputs.ano }}
+      - run: python pipeline/municipios.py
+      - run: python pipeline/tabelas.py --ano ${{ inputs.ano }} --uf BR
+      - run: python pipeline/baixar.py --ano 2022 && python pipeline/tabelas.py --ano 2022 --uf MG && python -m pytest pipeline/tests -q
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed
+          git diff --cached --quiet || git commit -m "dados: regenera ${{ inputs.ano }} a partir do TSE"
+          git push

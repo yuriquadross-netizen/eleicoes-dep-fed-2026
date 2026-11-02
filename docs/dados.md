@@ -38,3 +38,15 @@ Filtros: `CD_CARGO = 6` (Deputado Federal), `NR_TURNO = 1`. CSVs do TSE: `latin1
 - **Cadeiras 2026:** o TSE marca 513 eleitos, já com a redistribuição entre UFs (ex.: RJ 46, PA 17, PB 12). Nada fixo no código: tudo vem de `DS_SIT_TOT_TURNO`.
 - **Municípios:** 5.571 (inclui Boa Esperança do Norte-MT). Os 66 nomes de micro de MG batem com a planilha.
 - Arquivos do TSE 2026 publicados em 01/11/2026; colunas idênticas às de 2022.
+
+## Leitura ideológica — reconstrução da planilha 2022 (02/11/2026)
+
+A classificação usada na planilha foi reconstruída resolvendo o sistema "Direita % e Centro % das 66 micros". O resultado é **exato** (resíduo zero), e o teste `test_ideologia_2022.py` o trava.
+
+- **Direita (2022):** DC, NOVO, PL, PP, REPUBLICANOS, UNIÃO
+- **Centro (2022):** AVANTE, CIDADANIA, MDB, PODE, PSD, PSDB, SOLIDARIEDADE
+- **Fora das duas classes:** todos os demais, inclusive PTB, PATRIOTA, PSC, PRTB, PROS, PMN e AGIR. Não está claro se isso foi deliberado.
+- **Fórmula da planilha:** votos **nominais** dos partidos da classe ÷ votos válidos (nominais + legenda). O numerador ignora os votos de legenda, mas o denominador os inclui.
+
+Proposta para 2026: `config/partidos_ideologia.csv` (coluna `classe`), aguardando a confirmação do Yuri (coluna `confirmado`).
+Recomendação de fórmula para 2026: nominais **+ legenda** no numerador, coerente com o denominador. A diferença fica entre 1 e 2 pontos em relação à fórmula de 2022.

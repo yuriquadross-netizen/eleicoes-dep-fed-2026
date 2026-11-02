@@ -65,7 +65,7 @@ def processar_uf(con, ano: int, uf: str, mun: pd.DataFrame) -> dict[str, pd.Data
         select CAST(SQ_CANDIDATO AS BIGINT) sq_candidato, any_value(NR_CANDIDATO) nr,
                any_value(NM_CANDIDATO) nome, any_value(NM_URNA_CANDIDATO) nome_urna,
                any_value(SG_PARTIDO) partido, any_value(NR_PARTIDO) nr_partido,
-               any_value(NULLIF(SG_FEDERACAO, '#NULO')) federacao, any_value(SG_UF) uf,
+               any_value(regexp_replace(NULLIF(SG_FEDERACAO, '#NULO'), '[0-9]+-', '', 'g')) federacao, any_value(SG_UF) uf,
                any_value(DS_SIT_TOT_TURNO) situacao_tse, any_value(DS_SITUACAO_CANDIDATURA) candidatura,
                SUM(CAST(QT_VOTOS_NOMINAIS_VALIDOS AS BIGINT)) votos_total,
                SUM(CAST(QT_VOTOS_NOMINAIS AS BIGINT)) votos_brutos_total
@@ -90,7 +90,7 @@ def processar_uf(con, ano: int, uf: str, mun: pd.DataFrame) -> dict[str, pd.Data
 
     f = extrair("votacao_partido_munzona", ano, uf)
     out["partido"] = con.sql(f"""
-        select p.SG_PARTIDO partido, any_value(NULLIF(p.SG_FEDERACAO, '#NULO')) federacao, m.cd_ibge,
+        select p.SG_PARTIDO partido, any_value(regexp_replace(NULLIF(p.SG_FEDERACAO, '#NULO'), '[0-9]+-', '', 'g')) federacao, m.cd_ibge,
                SUM(CAST(QT_VOTOS_NOMINAIS_VALIDOS AS BIGINT)) nominais,
                SUM(CAST(QT_TOTAL_VOTOS_LEG_VALIDOS AS BIGINT)) legenda
         from {ler(con, f)} p join mun m on m.cd_tse = CAST(p.CD_MUNICIPIO AS BIGINT)

@@ -159,7 +159,7 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 5 — Leitura ideológica · *Visível: cada meso/micro mostra Direita/Centro/Esquerda %, e o mapa da UF pode ser colorido por isso.*
 
-- [ ] **5.1** Gerar `config/partidos_ideologia.csv` (`sigla, nome, federacao, classe`) com todos os partidos de 2026, com `classe` vazia ou com sugestão marcada `?`. **O Yuri preenche e revisa.** Nenhum cálculo roda com classe vazia (o pipeline falha com a lista das faltantes).
+- [x] **5.1** (proposta gerada; **aguarda confirmação do Yuri**, ver `docs/dados.md`) Gerar `config/partidos_ideologia.csv` (`sigla, nome, federacao, classe`) com todos os partidos de 2026, com `classe` vazia ou com sugestão marcada `?`. **O Yuri preenche e revisa.** Nenhum cálculo roda com classe vazia (o pipeline falha com a lista das faltantes).
 - [ ] **5.2** Calcular os percentuais por município e região a partir de `votacao_partido_munzona` (nominais + legenda). **Verificar:** com a classificação de 2022 da Aliança (pedir ao Yuri, ou inferir e confirmar com ele), Barbacena 2022 deve dar Direita ≈ 0,3159 e Centro ≈ 0,2227.
 - [ ] **5.3** Exibir nas páginas de região e incluir a opção "Colorir por: % Direita" no `MapaUF` (paleta divergente). **Cerca:** a classificação nunca aparece no perfil do candidato como rótulo pessoal, só como agregado regional.
 

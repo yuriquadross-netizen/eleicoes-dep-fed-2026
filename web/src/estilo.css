@@ -158,9 +158,23 @@ input[type='search']:focus, select:focus { outline: 2px solid var(--link); outli
 .segmentado button { all: unset; cursor: pointer; padding: 0.35rem 0.75rem; font-size: 0.85rem; color: var(--tinta-2); }
 .segmentado button[aria-pressed='true'] { background: var(--tinta); color: var(--papel); }
 
-/* ---- Leitura ideológica (divergente; validado com dataviz/validate_palette.js) ---- */
-:root { --direita: #2a78d6; --centro: #a8a49b; --esquerda: #e34948; }
-@media (prefers-color-scheme: dark) { :root { --direita: #3987e5; --centro: #57554f; --esquerda: #e66767; } }
+/* ---- Leitura ideológica: Direita = verde, Centro = amarelo, Esquerda = vermelho.
+   Trio validado com dataviz/validate_palette.js (CVD ok nos dois modos; rótulos diretos sempre presentes).
+   Rampas sequenciais OKLCH de 7 passos para os mapas; no escuro a ponta clara = mais votos. ---- */
+:root {
+  --direita: #008300; --centro: #eda100; --esquerda: #e34948;
+  --seq-verde-0: #c4f9be; --seq-verde-1: #97df91; --seq-verde-2: #6ec467; --seq-verde-3: #47a842; --seq-verde-4: #238b20; --seq-verde-5: #066d05; --seq-verde-6: #004f00;
+  --seq-amarelo-0: #ffebd1; --seq-amarelo-1: #fecc87; --seq-amarelo-2: #f6ae34; --seq-amarelo-3: #dd9602; --seq-amarelo-4: #bf8101; --seq-amarelo-5: #a26d01; --seq-amarelo-6: #855902;
+  --seq-vermelho-0: #fedbd7; --seq-vermelho-1: #feb0a9; --seq-vermelho-2: #fe7f78; --seq-vermelho-3: #eb5552; --seq-vermelho-4: #cc3336; --seq-vermelho-5: #a81621; --seq-vermelho-6: #810011;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --direita: #008300; --centro: #dbab10; --esquerda: #d94f4f;
+  --seq-verde-0: #004f00; --seq-verde-1: #066d05; --seq-verde-2: #238b20; --seq-verde-3: #47a842; --seq-verde-4: #6ec467; --seq-verde-5: #97df91; --seq-verde-6: #c4f9be;
+  --seq-amarelo-0: #855902; --seq-amarelo-1: #a26d01; --seq-amarelo-2: #bf8101; --seq-amarelo-3: #dd9602; --seq-amarelo-4: #f6ae34; --seq-amarelo-5: #fecc87; --seq-amarelo-6: #ffebd1;
+  --seq-vermelho-0: #810011; --seq-vermelho-1: #a81621; --seq-vermelho-2: #cc3336; --seq-vermelho-3: #eb5552; --seq-vermelho-4: #fe7f78; --seq-vermelho-5: #feb0a9; --seq-vermelho-6: #fedbd7;
+  }
+}
 .ideo-0 { background: var(--direita); }
 .ideo-1 { background: var(--centro); }
 .ideo-2 { background: var(--esquerda); }

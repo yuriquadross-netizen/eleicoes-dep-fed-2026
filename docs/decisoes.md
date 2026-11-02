@@ -13,4 +13,5 @@ Formato: data · decisão · por quê · quem decidiu. Mudanças de rumo entram 
 | 2026-11-02 | Site público, sem marca (padrão) | Escolha do Yuri | Yuri |
 | 2026-11-02 | Classificação 2026. Direita: PL, PP, União, Republicanos, Novo, DC, Missão, PRTB. Centro: PSD, MDB, Podemos, Avante, Solidariedade, PSDB, Cidadania, PRD, Mobiliza, Agir, Democrata (ex-PMB). Esquerda: os demais | Confirmada pelo Yuri | Yuri |
 | 2026-11-02 | Ideologia = (nominais + legenda) ÷ válidos; Direita + Centro + Esquerda = 100% | Coerência entre numerador e denominador (a planilha 2022 usava só nominais) | Plano (recomendação não contestada) |
-| 2026-11-02 | Paleta ideológica divergente azul ↔ cinza ↔ vermelho, validada para daltonismo | Eixo polar com meio neutro | Plano |
+| 2026-11-02 | ~~Paleta ideológica azul ↔ cinza ↔ vermelho~~ (substituída) | — | Plano |
+| 2026-11-02 | **Cores fixas: Direita = verde, Centro = amarelo, Esquerda = vermelho**, nas barras e nos mapas (escalas de 7 tons de cada cor). O mapa de votos do candidato segue azul, porque mostra votos e não ideologia | Pedido do Yuri; trio validado para daltonismo nos dois modos | Yuri |

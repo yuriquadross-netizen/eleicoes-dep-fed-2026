@@ -122,6 +122,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
         formatar={(v) => pct(v)}
         tituloLegenda={`${METRICAS[metrica].rotulo} dos votos válidos por ${NOME_TIPO[tipo].singular.toLowerCase()}`}
         aoSelecionar={(id) => navegar(`/r/${tipo}/${id}`)}
+        rampa={(['verde', 'amarelo', 'vermelho'] as const)[metrica]}
       />
 
       <div className="duas-colunas">

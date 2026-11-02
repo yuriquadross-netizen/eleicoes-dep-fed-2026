@@ -28,13 +28,16 @@ interface Props {
   altura?: number
   /** esconde a legenda (mapa só de localização) */
   semLegenda?: boolean
+  /** escala de cor: azul (padrão, votos) ou verde/amarelo/vermelho (Direita/Centro/Esquerda) */
+  rampa?: 'verde' | 'amarelo' | 'vermelho'
 }
 
 const LARGURA = 640
 
 export default function MapaUF({
-  topo, camada, itens, formatar, tituloLegenda, selecionado, aoSelecionar, destaque, altura = 520, semLegenda,
+  topo, camada, itens, formatar, tituloLegenda, selecionado, aoSelecionar, destaque, altura = 520, semLegenda, rampa,
 }: Props) {
+  const cor = (k: number) => (rampa ? `var(--seq-${rampa}-${k})` : `var(--seq-${k})`)
   const [hover, setHover] = useState<{ id: number; x: number; y: number } | null>(null)
   const caixa = useRef<HTMLDivElement>(null)
 
@@ -61,7 +64,7 @@ export default function MapaUF({
 
   const classe = (id: number) => {
     const v = itens.get(id)?.valor ?? 0
-    return v > 0 ? `var(--seq-${escala(v)})` : 'var(--sem-voto)'
+    return v > 0 ? cor(escala(v)) : 'var(--sem-voto)'
   }
 
   const itemHover = hover ? itens.get(hover.id) : undefined
@@ -126,7 +129,7 @@ export default function MapaUF({
           {[...Array(N_CLASSES).keys()].map((k) => (
             <i
               key={k}
-              style={{ background: `var(--seq-${k})` }}
+              style={{ background: cor(k) }}
               title={`${formatar(k === 0 ? minimo : limites[k - 1])} – ${formatar(k === N_CLASSES - 1 ? maximo : limites[k])}`}
             />
           ))}

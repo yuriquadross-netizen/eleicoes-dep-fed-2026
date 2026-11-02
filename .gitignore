@@ -1,0 +1,23 @@
+# Dados brutos e intermediários (baixados do TSE/IBGE)
+data/raw/*
+data/interim/*
+!data/raw/.gitkeep
+
+# Saída gerada no build
+web/public/data/
+web/dist/
+web/screenshots/
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Arquivos de referência locais (planilhas internas não vão para o repo público)
+referencia/
+*.xlsx
+
+# Sistema
+.DS_Store

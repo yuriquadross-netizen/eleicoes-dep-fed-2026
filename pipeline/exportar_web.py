@@ -22,11 +22,32 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from comum import PROCESSED, REGIOES, UF_REGIAO, WEB_PUBLIC, args_padrao, ufs_de  # noqa: E402
+from comum import CONFIG, PROCESSED, REGIOES, UF_REGIAO, WEB_PUBLIC, args_padrao, ufs_de  # noqa: E402
 
 TIPOS = ["micro", "meso", "rgi", "rgint"]
 SIT_COD = {"Eleito": "E", "Suplente": "S", "Não eleito": "N", "Outros": "O"}
 TOP_N = 10
+CLASSES = ["Direita", "Centro", "Esquerda"]
+
+
+def ideologia(ano: int, mun: pd.DataFrame) -> pd.DataFrame:
+    """Votos (nominais + legenda) por classe ideológica e município, a partir de
+    config/partidos_ideologia.csv. Falha se algum partido com voto não tiver classe."""
+    pm = pd.read_parquet(PROCESSED / f"partido_mun_{ano}.parquet")
+    cls = pd.read_csv(CONFIG / "partidos_ideologia.csv")
+    faltam = sorted(set(pm.partido) - set(cls.sigla))
+    if faltam:
+        raise SystemExit(f"Partidos sem classe em config/partidos_ideologia.csv: {faltam}")
+    pm = pm.merge(cls[["sigla", "classe"]], left_on="partido", right_on="sigla")
+    pm["v"] = pm.nominais + pm.legenda
+    t = pm.pivot_table(index="cd_ibge", columns="classe", values="v", aggfunc="sum").reindex(columns=CLASSES)
+    return t.fillna(0).reset_index().merge(mun, on="cd_ibge")
+
+
+def fatias(df: pd.DataFrame, col: str, validos: pd.Series) -> dict[int, list[float]]:
+    """{id: [direita, centro, esquerda]} como fração dos válidos do recorte."""
+    s = df.groupby(col)[CLASSES].sum()
+    return {int(i): [r4(r[c] / validos[i]) if validos.get(i) else 0.0 for c in CLASSES] for i, r in s.iterrows()}
 
 
 def gravar(caminho: Path, obj) -> None:
@@ -50,6 +71,8 @@ def main() -> None:
     votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{a.ano}.parquet")
     validos = pd.read_parquet(PROCESSED / f"validos_mun_{a.ano}.parquet")
 
+    ideo = ideologia(a.ano, mun)
+    ideo = ideo[ideo.uf.isin(ufs)]
     cand = cand[cand.uf.isin(ufs) & (cand.votos_total > 0)].copy()
     votos = votos[votos.votos > 0].merge(mun, on="cd_ibge")
     votos = votos[votos.uf.isin(ufs)]
@@ -97,18 +120,34 @@ def main() -> None:
 
     # ---- arquivos de UF
     info_cand = cand.set_index("sq_candidato")
+    ufs_info = {}
     for uf in ufs:
         m = mun[mun.uf == uf]
         val = validos[validos.uf == uf]
+        iu = ideo[ideo.uf == uf]
         regioes = {}
+        ideo_nivel = {}
         for t in TIPOS:
             g = m.groupby(f"{t}_id").agg(nome=(f"{t}_nome", "first")).reset_index()
             vv = val.groupby(f"{t}_id").validos.sum()
+            ideo_nivel[t] = fatias(iu, f"{t}_id", vv)
+            lider = agg[t][agg[t].pos == 1].drop_duplicates("id").set_index("id")
             pai = {"micro": "meso_id", "rgi": "rgint_id"}.get(t)
             pais = m.groupby(f"{t}_id")[pai].first() if pai else None
-            regioes[t] = {int(r[f"{t}_id"]): {"nome": r.nome, "validos": int(vv.get(r[f"{t}_id"], 0)),
-                                              **({"pai": int(pais[r[f"{t}_id"]])} if pai else {})}
-                          for _, r in g.iterrows()}
+            regioes[t] = {}
+            for _, r in g.iterrows():
+                rid = r[f"{t}_id"]
+                item = {"nome": r.nome, "validos": int(vv.get(rid, 0)), "ideo": ideo_nivel[t].get(int(rid))}
+                if pai:
+                    item["pai"] = int(pais[rid])
+                if rid in lider.index:
+                    li = lider.loc[rid]
+                    sq = int(li.sq_candidato)
+                    item["lider"] = [sq, info_cand.at[sq, "nome_urna"], info_cand.at[sq, "partido"],
+                                     int(li.votos), r4(li.pct_local)]
+                regioes[t][int(rid)] = item
+        ideo_nivel["mun"] = fatias(iu, "cd_ibge", val.set_index("cd_ibge").validos)
+        ideo_uf = [r4(iu[c].sum() / val.validos.sum()) for c in CLASSES]
         vm = val.set_index("cd_ibge").validos
         municipios = {int(r.cd_ibge): [r.nome, int(r.micro_id), int(r.meso_id), int(r.rgi_id), int(r.rgint_id),
                                        int(vm.get(r.cd_ibge, 0))] for r in m.itertuples()}
@@ -116,8 +155,9 @@ def main() -> None:
         eleitos = [[int(c.sq_candidato), c.nome_urna, c.partido, int(c.votos_total)]
                    for c in c_uf[c_uf.situacao == "Eleito"].itertuples()]
         bancada = c_uf[c_uf.situacao == "Eleito"].partido.value_counts().to_dict()
+        ufs_info[uf] = {"eleitos": len(eleitos), "validos": int(val.validos.sum()), "ideo": ideo_uf}
         gravar(destino / "uf" / f"{uf}.json", {
-            "uf": uf, "regiao": UF_REGIAO[uf], "validos": int(val.validos.sum()),
+            "uf": uf, "regiao": UF_REGIAO[uf], "validos": int(val.validos.sum()), "ideo": ideo_uf,
             "municipios": municipios, "regioes": regioes, "eleitos": eleitos, "bancada": bancada,
             "n_candidatos": int(len(c_uf)),
         })
@@ -131,12 +171,16 @@ def main() -> None:
                         info_cand.at[r.sq_candidato, "partido"], SIT_COD[info_cand.at[r.sq_candidato, "situacao"]],
                         int(r.votos), r4(r.pct_local), r4(r.pct_base)] for r in g.itertuples()]
                 gravar(destino / "regiao" / t / f"{rid}.json",
-                       {"tipo": t, "id": int(rid), "uf": uf, "validos": int(g.validos.iloc[0]), "top": top})
+                       {"tipo": t, "id": int(rid), "uf": uf, "validos": int(g.validos.iloc[0]),
+                        "ideo": ideo_nivel[t].get(int(rid)), "top": top})
 
     disponiveis = sorted(p.stem for p in (destino / "uf").glob("*.json"))
     gravar(destino / "meta.json", {
         "ano": a.ano, "gerado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ufs": disponiveis, "regioes": {k: {"nome": n, "ufs": u} for k, (n, u) in REGIOES.items()},
+        "ufs_info": ufs_info, "classes": CLASSES,
+        "ideologia": "Votos nominais + legenda dos partidos de cada classe ÷ votos válidos. "
+                     "Classificação: Aliança (config/partidos_ideologia.csv).",
         "fonte": "TSE — dados abertos (votação nominal por município e zona), 1º turno",
     })
     tam = sum(f.stat().st_size for f in destino.rglob("*.json")) / 1e6

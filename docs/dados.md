@@ -48,5 +48,5 @@ A classificação usada na planilha foi reconstruída resolvendo o sistema "Dire
 - **Fora das duas classes:** todos os demais, inclusive PTB, PATRIOTA, PSC, PRTB, PROS, PMN e AGIR. Não está claro se isso foi deliberado.
 - **Fórmula da planilha:** votos **nominais** dos partidos da classe ÷ votos válidos (nominais + legenda). O numerador ignora os votos de legenda, mas o denominador os inclui.
 
-Proposta para 2026: `config/partidos_ideologia.csv` (coluna `classe`), aguardando a confirmação do Yuri (coluna `confirmado`).
+Classificação 2026 confirmada pelo Yuri: `config/partidos_ideologia.csv`.
 Recomendação de fórmula para 2026: nominais **+ legenda** no numerador, coerente com o denominador. A diferença fica entre 1 e 2 pontos em relação à fórmula de 2022.

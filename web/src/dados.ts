@@ -1,3 +1,5 @@
+import type { Topology } from 'topojson-specification'
+
 // Camada de dados: tipos dos JSON gerados por pipeline/exportar_web.py e leitura com cache.
 
 export type Tipo = 'micro' | 'meso' | 'rgi' | 'rgint'
@@ -26,16 +28,23 @@ export interface Perfil {
   rgint: LinhaLocal[]
 }
 
+/** [direita, centro, esquerda] como fração dos votos válidos */
+export type Ideo = [number, number, number]
+
 export interface Regiao {
   nome: string
   validos: number
   pai?: number
+  ideo: Ideo | null
+  /** candidato mais votado: [sq, urna, partido, votos, % do local] */
+  lider?: [number, string, string, number, number]
 }
 
 export interface DadosUF {
   uf: string
   regiao: string
   validos: number
+  ideo: Ideo
   /** cd_ibge → [nome, micro, meso, rgi, rgint, válidos] */
   municipios: Record<string, [string, number, number, number, number, number]>
   regioes: Record<Tipo, Record<string, Regiao>>
@@ -53,6 +62,9 @@ export interface Meta {
   gerado_em: string
   ufs: string[]
   regioes: Record<string, { nome: string; ufs: string[] }>
+  ufs_info: Record<string, { eleitos: number; validos: number; ideo: Ideo }>
+  classes: string[]
+  ideologia: string
   fonte: string
 }
 
@@ -63,6 +75,7 @@ export interface TopRegiao {
   id: number
   uf: string
   validos: number
+  ideo: Ideo | null
   top: LinhaTop[]
 }
 
@@ -121,7 +134,6 @@ export function normalizar(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
 
-import type { Topology } from 'topojson-specification'
 const geoCache = new Map<string, Promise<Topology>>()
 /** TopoJSON da UF com as camadas mun, micro, meso, rgi, rgint (gerado por pipeline/geometrias.py). */
 export function geo(uf: string): Promise<Topology> {
@@ -135,3 +147,10 @@ export function geo(uf: string): Promise<Topology> {
   }
   return geoCache.get(uf)!
 }
+
+/** Tipo pai de cada recorte (micro → meso, rgi → rgint). */
+export const PAI: Partial<Record<Nivel, Tipo>> = { micro: 'meso', rgi: 'rgint' }
+/** Filhos de cada recorte. */
+export const FILHO: Record<Tipo, Nivel> = { meso: 'micro', rgint: 'rgi', micro: 'mun', rgi: 'mun' }
+/** Posição do recorte no array de municípios [nome, micro, meso, rgi, rgint, válidos]. */
+export const IDX_TIPO: Record<Tipo, number> = { micro: 1, meso: 2, rgi: 3, rgint: 4 }

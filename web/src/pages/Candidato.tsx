@@ -5,6 +5,7 @@ import MapaUF, { type ItemMapa } from '../components/MapaUF'
 import {
   api, geo, nomeLocal, NOME_TIPO, NOME_UF, type DadosUF, type LinhaLocal, type Nivel, type Perfil, type Tipo,
 } from '../dados'
+import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
 
 type Ordem = 'votos' | 'pct_local' | 'pct_base'
@@ -25,7 +26,8 @@ export default function Candidato() {
 }
 
 function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
-  const [tipo, setTipo] = useState<Tipo>('micro')
+  const [divisao] = useDivisao()
+  const [tipo, setTipo] = useState<Tipo>(TIPOS_DIVISAO[divisao].menor)
   const [aberto, setAberto] = useState<number | null>(null)
   const [metrica, setMetrica] = useState<'votos' | 'pct_local'>('votos')
   const [verMun, setVerMun] = useState(false)
@@ -71,13 +73,13 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
   return (
     <article>
       <p className="trilha">
-        <Link to="/">Buscar</Link> › {NOME_UF[p.uf]} › {p.urna}
+        <Link to="/">Buscar</Link> › <Link to={`/uf/${p.uf}`}>{NOME_UF[p.uf]}</Link> › {p.urna}
       </p>
       <header className="perfil-cab">
         <div>
           <h1>{p.urna}</h1>
           <p className="sub">
-            {p.nome} · {p.partido}
+            {p.nome} · <Link to={`/?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
             {p.federacao ? ` (${p.federacao})` : ''} · nº {p.nr} · {NOME_UF[p.uf]}
           </p>
         </div>
@@ -209,7 +211,10 @@ function TabelaLocais({
                 onClick={() => setAberto(aberto === l[0] ? null : l[0])}
               >
                 <td>
-                  <span className="seta">{aberto === l[0] ? '▾' : '▸'}</span> {nomeLocal(uf, tipo, l[0])}
+                  <span className="seta">{aberto === l[0] ? '▾' : '▸'}</span>{' '}
+                  <Link className="sutil" to={`/r/${tipo}/${l[0]}`} onClick={(e) => e.stopPropagation()} title="Ver o top 10 desta região">
+                    {nomeLocal(uf, tipo, l[0])}
+                  </Link>
                 </td>
                 <td className="n">{num(l[1])}</td>
                 <td className="n">{pct(l[3])}</td>
@@ -219,7 +224,11 @@ function TabelaLocais({
               {aberto === l[0] &&
                 (munPorRegiao.get(l[0]) ?? []).map((m) => (
                   <tr key={m[0]} className="filho">
-                    <td>{nomeLocal(uf, 'mun', m[0])}</td>
+                    <td>
+                      <Link className="sutil" to={`/r/mun/${m[0]}`} title="Ver o top 10 do município">
+                        {nomeLocal(uf, 'mun', m[0])}
+                      </Link>
+                    </td>
                     <td className="n">{num(m[1])}</td>
                     <td className="n">{pct(m[3])}</td>
                     <td className="n">{pct(m[4])}</td>

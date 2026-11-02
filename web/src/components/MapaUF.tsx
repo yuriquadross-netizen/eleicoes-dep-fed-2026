@@ -26,12 +26,14 @@ interface Props {
   /** id da região a destacar com contorno (ex.: mini-mapa de uma micro) */
   destaque?: number
   altura?: number
+  /** esconde a legenda (mapa só de localização) */
+  semLegenda?: boolean
 }
 
 const LARGURA = 640
 
 export default function MapaUF({
-  topo, camada, itens, formatar, tituloLegenda, selecionado, aoSelecionar, destaque, altura = 520,
+  topo, camada, itens, formatar, tituloLegenda, selecionado, aoSelecionar, destaque, altura = 520, semLegenda,
 }: Props) {
   const [hover, setHover] = useState<{ id: number; x: number; y: number } | null>(null)
   const caixa = useRef<HTMLDivElement>(null)
@@ -104,7 +106,7 @@ export default function MapaUF({
             }}
           >
             <strong>{itemHover?.nome ?? '—'}</strong>
-            {itemHover ? (
+            {itemHover?.detalhes.length === 0 ? null : itemHover ? (
               itemHover.detalhes.map(([k, v]) => (
                 <span key={k}>
                   {k} <b>{v}</b>
@@ -116,6 +118,7 @@ export default function MapaUF({
           </div>
         )}
       </div>
+      {!semLegenda && (
       <figcaption className="legenda-mapa">
         <span className="legenda-titulo">{tituloLegenda}</span>
         <span className="rampa">
@@ -134,6 +137,7 @@ export default function MapaUF({
           <span>{formatar(maximo)}</span>
         </span>
       </figcaption>
+      )}
     </figure>
   )
 }

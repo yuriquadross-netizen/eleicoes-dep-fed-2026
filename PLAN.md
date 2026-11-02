@@ -13,7 +13,7 @@
 
 **Referência de validação:** `pipeline/tests/fixtures/planilha_alianca_2022_mg.csv` traz o mapeamento de 2022 feito pela Aliança (MG, 66 micros × top 10). Rodar o pipeline com `ANO=2022` precisa reproduzir esses números. Esse é o teste de que os dados de 2026 estarão certos.
 
-**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Pendente da Etapa 1:** ativar o Pages e fazer o merge em `main` (passo 1.6, ação do Yuri). **Etapa 2 (mapa) concluída.** **Próximo passo de código: 3.2** (páginas de navegação geográfica; os JSON de top 10 por região já são exportados).
+**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Pendente da Etapa 1:** ativar o Pages e fazer o merge em `main` (passo 1.6, ação do Yuri). **Etapas 2, 3 e 5 concluídas** (mapa, navegação Brasil › UF › região com top 10 e leitura ideológica com a classificação confirmada pelo Yuri em 02/11). **Próximo passo de código: Etapa 6** (offline, fotos dos eleitos, exportar CSV).
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -143,9 +143,9 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 ### Etapa 3 — Navegação geográfica + top 10 · *Visível: Brasil › Sudeste › MG › Triângulo › Uberlândia mostra o top 10 idêntico à planilha (no modo 2022).*
 
 - [x] **3.1 Export das regiões** (feito em `exportar_web.py`, inclusive top 10 por município): `data/{ANO}/regioes/{tipo}/{id}.json` com o top 10 (duas métricas, partido, situação), válidos, lista de municípios e os filhos (meso→micros). `uf/{UF}.json` com eleitos da UF, bancada por partido e lista de mesos/micros. **Verificar:** o top 10 de Uberlândia 2022 começa com Ana Paula Junqueira (69.210). **Cerca:** sem ideologia ainda.
-- [ ] **3.2 Rotas e páginas:** `#/brasil`, `#/regiao/:sigla` (UFs, cadeiras e bancada), `#/uf/:uf` (mapa clicável + eleitos), `#/r/:tipo/:id` (top 10 + mini-mapa com a região destacada + municípios). Breadcrumb em todas. **Verificar:** capturas Playwright das quatro rotas. **Cerca:** reaproveitar `MapaUF`.
-- [ ] **3.3 Seletor de divisão:** alterna "Meso/Micro (IBGE até 2017)" ↔ "Intermediária/Imediata (IBGE atual)". Guarda a escolha no `localStorage` (envolto em try/catch) e afeta mapas, perfil e navegação. **Verificar:** alternar no perfil muda camada e tabela. **Cerca:** o padrão é sempre meso/micro.
-- [ ] **3.4 Busca por partido:** `#/partido/:sigla` com candidatos da sigla por UF. **Verificar:** captura de `#/partido/PL`.
+- [x] **3.2 Rotas e páginas:** (inclui `#/r/mun/:id`, o top 10 por município, que antecipa parte da Etapa 7) `#/brasil`, `#/regiao/:sigla` (UFs, cadeiras e bancada), `#/uf/:uf` (mapa clicável + eleitos), `#/r/:tipo/:id` (top 10 + mini-mapa com a região destacada + municípios). Breadcrumb em todas. **Verificar:** capturas Playwright das quatro rotas. **Cerca:** reaproveitar `MapaUF`.
+- [x] **3.3 Seletor de divisão:** alterna "Meso/Micro (IBGE até 2017)" ↔ "Intermediária/Imediata (IBGE atual)". Guarda a escolha no `localStorage` (envolto em try/catch) e afeta mapas, perfil e navegação. **Verificar:** alternar no perfil muda camada e tabela. **Cerca:** o padrão é sempre meso/micro.
+- [x] **3.4 Busca por partido:** (resolvida pelo filtro da busca: `#/?partido=PL&todos=1`, com link no perfil) `#/partido/:sigla` com candidatos da sigla por UF. **Verificar:** captura de `#/partido/PL`.
 
 ---
 
@@ -159,9 +159,9 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 5 — Leitura ideológica · *Visível: cada meso/micro mostra Direita/Centro/Esquerda %, e o mapa da UF pode ser colorido por isso.*
 
-- [x] **5.1** (proposta gerada; **aguarda confirmação do Yuri**, ver `docs/dados.md`) Gerar `config/partidos_ideologia.csv` (`sigla, nome, federacao, classe`) com todos os partidos de 2026, com `classe` vazia ou com sugestão marcada `?`. **O Yuri preenche e revisa.** Nenhum cálculo roda com classe vazia (o pipeline falha com a lista das faltantes).
-- [ ] **5.2** Calcular os percentuais por município e região a partir de `votacao_partido_munzona` (nominais + legenda). **Verificar:** com a classificação de 2022 da Aliança (pedir ao Yuri, ou inferir e confirmar com ele), Barbacena 2022 deve dar Direita ≈ 0,3159 e Centro ≈ 0,2227.
-- [ ] **5.3** Exibir nas páginas de região e incluir a opção "Colorir por: % Direita" no `MapaUF` (paleta divergente). **Cerca:** a classificação nunca aparece no perfil do candidato como rótulo pessoal, só como agregado regional.
+- [x] **5.1** (confirmado pelo Yuri em 02/11/2026) Gerar `config/partidos_ideologia.csv` (`sigla, nome, federacao, classe`) com todos os partidos de 2026, com `classe` vazia ou com sugestão marcada `?`. **O Yuri preenche e revisa.** Nenhum cálculo roda com classe vazia (o pipeline falha com a lista das faltantes).
+- [x] **5.2** (feito com nominais + legenda; a fórmula de 2022, só nominais, está travada em `test_ideologia_2022.py`) Calcular os percentuais por município e região a partir de `votacao_partido_munzona` (nominais + legenda). **Verificar:** com a classificação de 2022 da Aliança (pedir ao Yuri, ou inferir e confirmar com ele), Barbacena 2022 deve dar Direita ≈ 0,3159 e Centro ≈ 0,2227.
+- [x] **5.3** (com Esquerda % incluída; no mapa da UF, cada classe usa a escala sequencial) Exibir nas páginas de região e incluir a opção "Colorir por: % Direita" no `MapaUF` (paleta divergente). **Cerca:** a classificação nunca aparece no perfil do candidato como rótulo pessoal, só como agregado regional.
 
 ---
 

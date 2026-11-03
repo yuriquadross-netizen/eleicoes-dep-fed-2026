@@ -35,9 +35,34 @@ GRUPOS_CANDIDATO = 256  # o front usa o mesmo número (web/src/dados.ts)
 CLASSES = ["Direita", "Centro", "Esquerda"]
 
 
-def ideologia(ano: int, mun: pd.DataFrame) -> pd.DataFrame:
+def posicoes_proprias(ano: int, cand: pd.DataFrame) -> pd.DataFrame:
+    """Parlamentares marcados com campo diferente do partido (config/candidatos_ideologia.csv).
+
+    Colunas: ano, sq_candidato, nome_urna, uf, partido, classe, observacao. Só sq_candidato e
+    classe são usados; nome, UF e partido servem para leitura humana e são conferidos."""
+    pp = pd.read_csv(CONFIG / "candidatos_ideologia.csv", dtype={"sq_candidato": "int64"})
+    pp = pp[pp.ano == ano]
+    invalidas = sorted(set(pp.classe) - set(CLASSES))
+    if invalidas:
+        raise SystemExit(f"Classe inválida em config/candidatos_ideologia.csv: {invalidas} (use {CLASSES})")
+    conf = pp.merge(cand[["sq_candidato", "nome_urna", "uf", "partido"]], on="sq_candidato",
+                    how="left", suffixes=("", "_tse"))
+    sem = conf[conf.nome_urna_tse.isna()]
+    if len(sem):
+        raise SystemExit(f"Candidatos não encontrados em {ano}:\n{sem[['sq_candidato', 'nome_urna']]}")
+    for r in conf.itertuples():
+        if (r.nome_urna, r.uf, r.partido) != (r.nome_urna_tse, r.uf_tse, r.partido_tse):
+            print(f"  aviso: {r.sq_candidato} no CSV é '{r.nome_urna} {r.partido}-{r.uf}', "
+                  f"no TSE é '{r.nome_urna_tse} {r.partido_tse}-{r.uf_tse}'")
+    return pp[["sq_candidato", "classe", "observacao"]]
+
+
+def ideologia(ano: int, mun: pd.DataFrame, proprias: pd.DataFrame, cand: pd.DataFrame) -> pd.DataFrame:
     """Votos (nominais + legenda) por classe ideológica e município, a partir de
-    config/partidos_ideologia.csv. Falha se algum partido com voto não tiver classe."""
+    config/partidos_ideologia.csv. Falha se algum partido com voto não tiver classe.
+
+    Parlamentar com posicionamento próprio: seus votos nominais saem do campo do partido e
+    vão para o campo dele; os votos de legenda continuam com o partido."""
     pm = pd.read_parquet(PROCESSED / f"partido_mun_{ano}.parquet")
     cls = pd.read_csv(CONFIG / "partidos_ideologia.csv")
     faltam = sorted(set(pm.partido) - set(cls.sigla))
@@ -45,8 +70,25 @@ def ideologia(ano: int, mun: pd.DataFrame) -> pd.DataFrame:
         raise SystemExit(f"Partidos sem classe em config/partidos_ideologia.csv: {faltam}")
     pm = pm.merge(cls[["sigla", "classe"]], left_on="partido", right_on="sigla")
     pm["v"] = pm.nominais + pm.legenda
-    t = pm.pivot_table(index="cd_ibge", columns="classe", values="v", aggfunc="sum").reindex(columns=CLASSES)
-    return t.fillna(0).reset_index().merge(mun, on="cd_ibge")
+    t = pm.pivot_table(index="cd_ibge", columns="classe", values="v", aggfunc="sum").reindex(columns=CLASSES).fillna(0)
+    if len(proprias):
+        classe_partido = dict(zip(cls.sigla, cls.classe))
+    propria_classe = dict(zip(proprias.sq_candidato, proprias.classe))
+    # observação (texto) ou "" quando marcado sem observação; ausente = segue o partido
+    propria_obs = {sq: (o if isinstance(o, str) else "") for sq, o in zip(proprias.sq_candidato, proprias.observacao)}
+    if len(proprias):
+        print(f"  {len(proprias)} parlamentar(es) com posicionamento próprio")
+        votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{ano}.parquet")
+        partido = cand.set_index("sq_candidato").partido
+        for r in proprias.itertuples():
+            de = classe_partido[partido[r.sq_candidato]]
+            if de == r.classe:
+                continue
+            v = votos[votos.sq_candidato == r.sq_candidato].set_index("cd_ibge").votos
+            t.loc[v.index, de] -= v
+            t.loc[v.index, r.classe] += v
+        assert (t >= 0).all().all(), "voto negativo após mover posicionamentos próprios"
+    return t.reset_index().merge(mun, on="cd_ibge")
 
 
 def fatias(df: pd.DataFrame, col: str, validos: pd.Series) -> dict[int, list[float]]:
@@ -83,10 +125,16 @@ def main() -> None:
     votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{a.ano}.parquet")
     validos = pd.read_parquet(PROCESSED / f"validos_mun_{a.ano}.parquet")
 
-    ideo = ideologia(a.ano, mun)
+    proprias = posicoes_proprias(a.ano, cand)
+    ideo = ideologia(a.ano, mun, proprias, cand)
     ideo = ideo[ideo.uf.isin(ufs)]
     cls = pd.read_csv(CONFIG / "partidos_ideologia.csv")
     classe_partido = dict(zip(cls.sigla, cls.classe))
+    propria_classe = dict(zip(proprias.sq_candidato, proprias.classe))
+    # observação (texto) ou "" quando marcado sem observação; ausente = segue o partido
+    propria_obs = {sq: (o if isinstance(o, str) else "") for sq, o in zip(proprias.sq_candidato, proprias.observacao)}
+    if len(proprias):
+        print(f"  {len(proprias)} parlamentar(es) com posicionamento próprio")
     cand = cand[cand.uf.isin(ufs) & (cand.votos_total > 0)].copy()
     votos = votos[votos.votos > 0].merge(mun, on="cd_ibge")
     votos = votos[votos.uf.isin(ufs)]
@@ -117,7 +165,9 @@ def main() -> None:
             "sq": int(c.sq_candidato), "nr": c.nr, "nome": c.nome, "urna": c.nome_urna,
             "partido": c.partido, "federacao": c.federacao if isinstance(c.federacao, str) else None, "uf": c.uf, "situacao": c.situacao,
             "situacao_tse": c.situacao_tse, "votos": int(c.votos_total), "pos_uf": int(c.pos_uf),
-            "classe": classe_partido.get(c.partido),
+            "classe": propria_classe.get(c.sq_candidato, classe_partido.get(c.partido)),
+            "classe_partido": classe_partido.get(c.partido),
+            "posicao_propria": propria_obs.get(c.sq_candidato),
         }
         for n in niveis:
             df = por_cand[n].get(c.sq_candidato)

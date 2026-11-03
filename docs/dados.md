@@ -50,3 +50,19 @@ A classificação usada na planilha foi reconstruída resolvendo o sistema "Dire
 
 Classificação 2026 confirmada pelo Yuri: `config/partidos_ideologia.csv`.
 Recomendação de fórmula para 2026: nominais **+ legenda** no numerador, coerente com o denominador. A diferença fica entre 1 e 2 pontos em relação à fórmula de 2022.
+
+## Como marcar um parlamentar com campo diferente do partido
+
+Edite `config/candidatos_ideologia.csv` (pelo GitHub, em *Edit*, ou peça ao Claude) e acrescente uma linha por parlamentar:
+
+```
+ano,sq_candidato,nome_urna,uf,partido,classe,observacao
+2026,130002535301,ANA ELISA,MG,PT,Centro,motivo da marcação (opcional)
+```
+
+- `sq_candidato` é o número que aparece no endereço do perfil (`#/candidato/<número>`). É o único campo usado para localizar a pessoa.
+- `nome_urna`, `uf` e `partido` servem para leitura humana. O pipeline confere com o TSE e avisa se não baterem.
+- `classe` precisa ser `Direita`, `Centro` ou `Esquerda`. A publicação falha se vier outra coisa ou se o número não existir.
+- **Efeito:** o perfil mostra "posicionamento próprio (partido: …)" e muda a cor do mapa. Nas barras e mapas regionais, os votos nominais da pessoa passam para o campo marcado; os votos de legenda continuam com o partido.
+- A marcação aparece no site público.
+

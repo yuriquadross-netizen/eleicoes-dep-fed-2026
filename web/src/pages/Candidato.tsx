@@ -86,6 +86,19 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
               {p.nome} · <Link to={`/?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
               {p.federacao ? ` (${p.federacao})` : ''} · nº {p.nr} · {NOME_UF[p.uf]}
             </p>
+            {p.classe && (
+              <p className="campo">
+                <i className={`ideo-${['Direita', 'Centro', 'Esquerda'].indexOf(p.classe)}`} /> {p.classe}
+                {typeof p.posicao_propria === 'string' ? (
+                  <span className="propria" title={p.posicao_propria || undefined}>
+                    {' '}· posicionamento próprio (partido: {p.classe_partido})
+                    {p.posicao_propria ? ` — ${p.posicao_propria}` : ''}
+                  </span>
+                ) : (
+                  <span className="nota"> · campo do partido</span>
+                )}
+              </p>
+            )}
           </div>
         </div>
         <span className={`sit sit-${p.situacao[0]} grande`}>{p.situacao_tse.toLowerCase()}</span>

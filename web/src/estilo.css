@@ -14,27 +14,9 @@
   --hover: #f1ede4;
   --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light;
+  color-scheme: only light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --papel: #12181f;
-    --superficie: #19212a;
-    --tinta: #e8e4dc;
-    --tinta-2: #b7b2a8;
-    --tinta-3: #8a8780;
-    --linha: #2a333d;
-    --linha-forte: #3a4450;
-    --destaque: #d2b06a;
-    --link: #8fbfe6;
-    --eleito: #6cc597;
-    --suplente: #d2b06a;
-    --nao: #8a8780;
-    --hover: #1f2933;
-    color-scheme: dark;
-  }
-}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -117,18 +99,11 @@ input[type='search']:focus, select:focus { outline: 2px solid var(--link); outli
   .tabela th, .tabela td { padding: 0.45rem 0.5rem; }
 }
 
-/* ---- Mapa (escala sequencial azul, 7 classes; no escuro a ponta clara = mais votos) ---- */
+/* ---- Mapa (escala sequencial, 7 classes: mais escuro = mais) ---- */
 :root {
   --seq-0: #cde2fb; --seq-1: #9ec5f4; --seq-2: #6da7ec; --seq-3: #3987e5;
   --seq-4: #256abf; --seq-5: #184f95; --seq-6: #0d366b;
   --sem-voto: #ebe7de;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --seq-0: #0d366b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5;
-    --seq-4: #6da7ec; --seq-5: #9ec5f4; --seq-6: #cde2fb;
-    --sem-voto: #262d35;
-  }
 }
 .mapa { margin: 0 0 1.25rem; background: var(--superficie); border: 1px solid var(--linha); border-radius: 8px; padding: 0.75rem; }
 .mapa-caixa { position: relative; }
@@ -158,9 +133,15 @@ input[type='search']:focus, select:focus { outline: 2px solid var(--link); outli
 .segmentado button { all: unset; cursor: pointer; padding: 0.35rem 0.75rem; font-size: 0.85rem; color: var(--tinta-2); }
 .segmentado button[aria-pressed='true'] { background: var(--tinta); color: var(--papel); }
 
-/* ---- Leitura ideológica (divergente; validado com dataviz/validate_palette.js) ---- */
-:root { --direita: #2a78d6; --centro: #a8a49b; --esquerda: #e34948; }
-@media (prefers-color-scheme: dark) { :root { --direita: #3987e5; --centro: #57554f; --esquerda: #e66767; } }
+/* ---- Leitura ideológica: Direita = verde, Centro = amarelo, Esquerda = vermelho.
+   Trio validado com dataviz/validate_palette.js (CVD ok nos dois modos; rótulos diretos sempre presentes).
+   Rampas sequenciais OKLCH de 7 passos para os mapas: mais escuro = mais. ---- */
+:root {
+  --direita: #008300; --centro: #eda100; --esquerda: #e34948;
+  --seq-verde-0: #c4f9be; --seq-verde-1: #97df91; --seq-verde-2: #6ec467; --seq-verde-3: #47a842; --seq-verde-4: #238b20; --seq-verde-5: #066d05; --seq-verde-6: #004f00;
+  --seq-amarelo-0: #ffefdb; --seq-amarelo-1: #ffd59d; --seq-amarelo-2: #feba50; --seq-amarelo-3: #efa305; --seq-amarelo-4: #d49114; --seq-amarelo-5: #bb800f; --seq-amarelo-6: #a36e03;
+  --seq-vermelho-0: #fedbd7; --seq-vermelho-1: #feb0a9; --seq-vermelho-2: #fe7f78; --seq-vermelho-3: #eb5552; --seq-vermelho-4: #cc3336; --seq-vermelho-5: #a81621; --seq-vermelho-6: #810011;
+}
 .ideo-0 { background: var(--direita); }
 .ideo-1 { background: var(--centro); }
 .ideo-2 { background: var(--esquerda); }
@@ -186,3 +167,11 @@ input[type='search']:focus, select:focus { outline: 2px solid var(--link); outli
 .linha-ctrl { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center; margin: 0.5rem 0 0.75rem; }
 .tabela td a.sutil { color: var(--tinta); }
 .pos { color: var(--tinta-3); font-variant-numeric: tabular-nums; width: 2rem; }
+
+/* legenda do modo "campo predominante" */
+.legenda-pred { max-width: 440px; }
+.pred-linha { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 0.5rem; }
+.pred-nome { font-size: 0.78rem; color: var(--tinta-2); }
+.rampa.rampa-6 { grid-template-columns: repeat(6, 1fr); }
+.rampa.rampa-6 i:first-child { margin-right: 0; }
+.rampa-rotulos { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; font-size: 0.7rem; color: var(--tinta-3); text-align: center; font-variant-numeric: tabular-nums; }

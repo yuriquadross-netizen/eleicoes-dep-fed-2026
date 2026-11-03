@@ -21,6 +21,8 @@ export interface Perfil {
   situacao_tse: string
   votos: number
   pos_uf: number
+  /** campo ideológico do partido (config/partidos_ideologia.csv) */
+  classe?: Classe | null
   mun: LinhaLocal[]
   micro: LinhaLocal[]
   meso: LinhaLocal[]
@@ -154,3 +156,11 @@ export const PAI: Partial<Record<Nivel, Tipo>> = { micro: 'meso', rgi: 'rgint' }
 export const FILHO: Record<Tipo, Nivel> = { meso: 'micro', rgint: 'rgi', micro: 'mun', rgi: 'mun' }
 /** Posição do recorte no array de municípios [nome, micro, meso, rgi, rgint, válidos]. */
 export const IDX_TIPO: Record<Tipo, number> = { micro: 1, meso: 2, rgi: 3, rgint: 4 }
+
+export type Classe = 'Direita' | 'Centro' | 'Esquerda'
+/** Escala de cor de cada campo: Direita = verde, Centro = amarelo, Esquerda = vermelho. */
+export const RAMPA_CLASSE: Record<Classe, 'verde' | 'amarelo' | 'vermelho'> = {
+  Direita: 'verde',
+  Centro: 'amarelo',
+  Esquerda: 'vermelho',
+}

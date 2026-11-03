@@ -13,7 +13,7 @@
 
 **Referência de validação:** `pipeline/tests/fixtures/planilha_alianca_2022_mg.csv` traz o mapeamento de 2022 feito pela Aliança (MG, 66 micros × top 10). Rodar o pipeline com `ANO=2022` precisa reproduzir esses números. Esse é o teste de que os dados de 2026 estarão certos.
 
-**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Pendente da Etapa 1:** ativar o Pages e fazer o merge em `main` (passo 1.6, ação do Yuri). **Etapas 2, 3 e 5 concluídas** (mapa, navegação Brasil › UF › região com top 10 e leitura ideológica com a classificação confirmada pelo Yuri em 02/11). **Próximo passo de código: Etapa 6** (offline, fotos dos eleitos, exportar CSV).
+**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Publicado em 02/11/2026** no GitHub Pages: https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/ . Cada merge em `main` republica automaticamente. **Etapas 2, 3 e 5 concluídas** (mapa, navegação Brasil › UF › região com top 10 e leitura ideológica com a classificação confirmada pelo Yuri em 02/11). **Próximo passo de código: Etapa 6** (offline, fotos dos eleitos, exportar CSV).
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -112,7 +112,7 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
   - **Verificar:** `npm --prefix web run build` sem erros. `npm --prefix web run preview` e um script Playwright `web/scripts/screenshots.mjs` que salva capturas de `#/` e `#/candidato/<sq Nikolas>` em `web/screenshots/` (gitignored). Conferir a captura.
   - **Cerca:** sem mapa e sem navegação geográfica. Visual limpo, sem perfeccionismo.
 
-- [ ] **1.6 Publicação + instalação no Dock** → `deploy.yml` e ícones prontos; falta o Yuri ativar o Pages e fazer o merge em `main`
+- [x] **1.6 Publicação + instalação no Dock** → no ar desde 02/11/2026 (Pages com Source = GitHub Actions)
   - **Objetivo:** `.github/workflows/deploy.yml` roda `exportar_web.py` a partir de `data/processed/`, depois o build do web e o deploy no Pages. Incluir `manifest.webmanifest`, ícones (512/192/`apple-touch-icon`) e `<meta name="apple-mobile-web-app-capable">`.
   - **Verificar:** a URL `https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/` abre. O Yuri usa Safari › Arquivo › Adicionar ao Dock e o app abre em janela própria (requer macOS Sonoma ou posterior).
   - **Cerca:** sem service worker ainda (Etapa 6).

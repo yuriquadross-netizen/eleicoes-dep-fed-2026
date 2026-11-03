@@ -73,6 +73,8 @@ def main() -> None:
 
     ideo = ideologia(a.ano, mun)
     ideo = ideo[ideo.uf.isin(ufs)]
+    cls = pd.read_csv(CONFIG / "partidos_ideologia.csv")
+    classe_partido = dict(zip(cls.sigla, cls.classe))
     cand = cand[cand.uf.isin(ufs) & (cand.votos_total > 0)].copy()
     votos = votos[votos.votos > 0].merge(mun, on="cd_ibge")
     votos = votos[votos.uf.isin(ufs)]
@@ -102,6 +104,7 @@ def main() -> None:
             "sq": int(c.sq_candidato), "nr": c.nr, "nome": c.nome, "urna": c.nome_urna,
             "partido": c.partido, "federacao": c.federacao if isinstance(c.federacao, str) else None, "uf": c.uf, "situacao": c.situacao,
             "situacao_tse": c.situacao_tse, "votos": int(c.votos_total), "pos_uf": int(c.pos_uf),
+            "classe": classe_partido.get(c.partido),
         }
         for n in niveis:
             df = por_cand[n].get(c.sq_candidato)

@@ -1,7 +1,7 @@
 // Mapa coroplético de uma UF (SVG + d3-geo). Não busca dados: recebe tudo por props.
 import { geoMercator, geoPath } from 'd3-geo'
 import { scaleQuantile } from 'd3-scale'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { feature } from 'topojson-client'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 import type { Nivel } from '../dados'
@@ -13,6 +13,8 @@ export interface ItemMapa {
   valor: number
   /** linhas extras do tooltip: [rótulo, valor formatado] */
   detalhes: [string, string][]
+  /** cor fixa do item (ignora a escala); usada no modo "campo predominante" */
+  cor?: string
 }
 
 interface Props {
@@ -28,13 +30,18 @@ interface Props {
   altura?: number
   /** esconde a legenda (mapa só de localização) */
   semLegenda?: boolean
+  /** escala de cor: azul (padrão, votos) ou verde/amarelo/vermelho (Direita/Centro/Esquerda) */
+  rampa?: 'verde' | 'amarelo' | 'vermelho'
+  /** legenda própria no lugar da rampa padrão */
+  legenda?: ReactNode
 }
 
 const LARGURA = 640
 
 export default function MapaUF({
-  topo, camada, itens, formatar, tituloLegenda, selecionado, aoSelecionar, destaque, altura = 520, semLegenda,
+  topo, camada, itens, formatar, tituloLegenda, selecionado, aoSelecionar, destaque, altura = 520, semLegenda, rampa, legenda,
 }: Props) {
+  const cor = (k: number) => (rampa ? `var(--seq-${rampa}-${k})` : `var(--seq-${k})`)
   const [hover, setHover] = useState<{ id: number; x: number; y: number } | null>(null)
   const caixa = useRef<HTMLDivElement>(null)
 
@@ -60,8 +67,10 @@ export default function MapaUF({
   const maximo = dom.length ? Math.max(...dom) : 0
 
   const classe = (id: number) => {
-    const v = itens.get(id)?.valor ?? 0
-    return v > 0 ? `var(--seq-${escala(v)})` : 'var(--sem-voto)'
+    const it = itens.get(id)
+    if (it?.cor) return it.cor
+    const v = it?.valor ?? 0
+    return v > 0 ? cor(escala(v)) : 'var(--sem-voto)'
   }
 
   const itemHover = hover ? itens.get(hover.id) : undefined
@@ -118,7 +127,8 @@ export default function MapaUF({
           </div>
         )}
       </div>
-      {!semLegenda && (
+      {!semLegenda && legenda}
+      {!semLegenda && !legenda && (
       <figcaption className="legenda-mapa">
         <span className="legenda-titulo">{tituloLegenda}</span>
         <span className="rampa">
@@ -126,7 +136,7 @@ export default function MapaUF({
           {[...Array(N_CLASSES).keys()].map((k) => (
             <i
               key={k}
-              style={{ background: `var(--seq-${k})` }}
+              style={{ background: cor(k) }}
               title={`${formatar(k === 0 ? minimo : limites[k - 1])} – ${formatar(k === N_CLASSES - 1 ? maximo : limites[k])}`}
             />
           ))}

@@ -175,3 +175,26 @@ input[type='search']:focus, select:focus { outline: 2px solid var(--link); outli
 .rampa.rampa-6 { grid-template-columns: repeat(6, 1fr); }
 .rampa.rampa-6 i:first-child { margin-right: 0; }
 .rampa-rotulos { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; font-size: 0.7rem; color: var(--tinta-3); text-align: center; font-variant-numeric: tabular-nums; }
+
+/* fotos de divulgação (TSE) */
+.foto { object-fit: cover; background: var(--linha); flex: none; }
+.foto-g { width: 88px; height: 110px; border-radius: 8px; border: 1px solid var(--linha); }
+.foto-p { width: 28px; height: 35px; border-radius: 4px; vertical-align: middle; margin-right: 0.5rem; }
+.perfil-cab > div:first-child { display: flex; gap: 1rem; align-items: flex-end; }
+.tabela td.com-foto > .foto-p, .tabela td.com-foto > .foto-vazia { float: left; margin-top: 1px; }
+.tabela td.com-foto > span { display: block; overflow: hidden; }
+.foto-vazia { display: inline-block; width: 28px; height: 35px; margin-right: 0.5rem; }
+
+.botao { all: unset; cursor: pointer; font-size: 0.82rem; color: var(--tinta-2); border: 1px solid var(--linha-forte); border-radius: 6px; padding: 0.3rem 0.7rem; background: var(--superficie); white-space: nowrap; }
+.botao:hover { color: var(--tinta); border-color: var(--tinta-3); }
+.botao:disabled { opacity: 0.6; cursor: default; }
+.titulo-com-acao { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+.rodape { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem 1.5rem; flex-wrap: wrap; }
+.offline { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; color: var(--tinta-2); }
+.offline .erro { color: var(--esquerda); }
+
+.campo { margin: 0.35rem 0 0; font-size: 0.85rem; color: var(--tinta); }
+.campo i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; }
+.campo .nota { color: var(--tinta-3); }
+.campo .propria { color: var(--tinta-2); font-style: italic; }

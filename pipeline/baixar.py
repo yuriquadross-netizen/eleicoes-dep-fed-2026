@@ -8,6 +8,8 @@ from __future__ import annotations
 import argparse
 import shutil
 import sys
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -24,8 +26,16 @@ def baixar(url: str, destino: Path, forcar: bool) -> None:
     destino.parent.mkdir(parents=True, exist_ok=True)
     tmp = destino.with_suffix(destino.suffix + ".part")
     print(f"  baixando   {url}")
-    with urllib.request.urlopen(url, timeout=600) as r, open(tmp, "wb") as f:
-        shutil.copyfileobj(r, f, length=1 << 20)
+    for tentativa in range(1, 4):  # o CDN do TSE às vezes recusa (403/5xx) por instantes
+        try:
+            with urllib.request.urlopen(url, timeout=600) as r, open(tmp, "wb") as f:
+                shutil.copyfileobj(r, f, length=1 << 20)
+            break
+        except (urllib.error.URLError, TimeoutError) as e:
+            if tentativa == 3:
+                raise
+            print(f"  falhou ({e}); nova tentativa em {5 * tentativa}s")
+            time.sleep(5 * tentativa)
     tmp.rename(destino)
     print(f"  ok         {destino.name} ({destino.stat().st_size / 1e6:.1f} MB)")
 

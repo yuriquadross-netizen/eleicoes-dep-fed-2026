@@ -19,3 +19,6 @@ Formato: data · decisão · por quê · quem decidiu. Mudanças de rumo entram 
 | 2026-11-03 | Mapa do perfil usa a cor do campo do partido do candidato (verde/amarelo/vermelho) | Pedido do Yuri | Yuri |
 | 2026-11-03 | Mapa da UF abre em **"Campo predominante"**: cor do campo vencedor em cada região, intensidade pela fatia dele (<40%, 40–45, 45–50, 50–55, 55–65, ≥65%). Os modos % Direita/Centro/Esquerda continuam disponíveis | Pedido do Yuri; faixas fixas para comparar regiões e estados | Yuri |
 | 2026-11-03 | Escala amarela clareada no fim (mínimo L 0,58) para não virar marrom | Legibilidade de "tons de amarelo" | Plano |
+| 2026-11-03 | **Republicanos, União Brasil e PP passam para Centro.** Direita: PL, Novo, Missão, DC, PRTB. Efeito no Brasil: Direita 47,0% → 26,5% dos válidos; Centro 26,7% → 47,2% | Revisão do Yuri | Yuri |
+| 2026-11-03 | **Posicionamento próprio por parlamentar** (`config/candidatos_ideologia.csv`): o campo marcado vale para o perfil (cor e rótulo) e para as somas regionais; seus votos nominais saem do campo do partido, e a legenda continua com o partido | Pedido do Yuri | Yuri |
+

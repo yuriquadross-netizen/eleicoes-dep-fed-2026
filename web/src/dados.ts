@@ -21,8 +21,12 @@ export interface Perfil {
   situacao_tse: string
   votos: number
   pos_uf: number
-  /** campo ideológico do partido (config/partidos_ideologia.csv) */
+  /** campo ideológico do parlamentar: o próprio, se marcado, senão o do partido */
   classe?: Classe | null
+  /** campo do partido (config/partidos_ideologia.csv) */
+  classe_partido?: Classe | null
+  /** presente quando o parlamentar foi marcado com campo próprio (config/candidatos_ideologia.csv); texto = observação */
+  posicao_propria?: string | null
   mun: LinhaLocal[]
   micro: LinhaLocal[]
   meso: LinhaLocal[]

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter, Link, Route, Routes } from 'react-router-dom'
 import './estilo.css'
 import Brasil from './pages/Brasil'
+import SalvarOffline from './components/SalvarOffline'
 import Busca from './pages/Busca'
 import Candidato from './pages/Candidato'
 import Regiao from './pages/Regiao'
@@ -30,7 +31,10 @@ function App() {
           <Route path="*" element={<p className="aviso">Página não encontrada.</p>} />
         </Routes>
       </main>
-      <footer className="rodape">Fonte: TSE, dados abertos (1º turno). Divisões regionais: IBGE, via geobr/Ipea.</footer>
+      <footer className="rodape">
+        <span>Fonte: TSE, dados abertos (1º turno). Divisões regionais: IBGE, via geobr/Ipea.</span>
+        <SalvarOffline />
+      </footer>
     </HashRouter>
   )
 }

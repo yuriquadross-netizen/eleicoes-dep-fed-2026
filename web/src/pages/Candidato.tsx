@@ -1,6 +1,8 @@
 import { Fragment, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
+import Foto from '../components/Foto'
+import { baixarCsv, pctCsv } from '../csv'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
 import {
   api, geo, nomeLocal, NOME_TIPO, NOME_UF, RAMPA_CLASSE, type DadosUF, type LinhaLocal, type Nivel, type Perfil, type Tipo,
@@ -77,11 +79,27 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
       </p>
       <header className="perfil-cab">
         <div>
-          <h1>{p.urna}</h1>
-          <p className="sub">
-            {p.nome} · <Link to={`/?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
-            {p.federacao ? ` (${p.federacao})` : ''} · nº {p.nr} · {NOME_UF[p.uf]}
-          </p>
+          {p.situacao === 'Eleito' && <Foto sq={p.sq} nome={p.urna} tamanho="g" />}
+          <div>
+            <h1>{p.urna}</h1>
+            <p className="sub">
+              {p.nome} · <Link to={`/?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
+              {p.federacao ? ` (${p.federacao})` : ''} · nº {p.nr} · {NOME_UF[p.uf]}
+            </p>
+            {p.classe && (
+              <p className="campo">
+                <i className={`ideo-${['Direita', 'Centro', 'Esquerda'].indexOf(p.classe)}`} /> {p.classe}
+                {typeof p.posicao_propria === 'string' ? (
+                  <span className="propria" title={p.posicao_propria || undefined}>
+                    {' '}· posicionamento próprio (partido: {p.classe_partido})
+                    {p.posicao_propria ? ` — ${p.posicao_propria}` : ''}
+                  </span>
+                ) : (
+                  <span className="nota"> · campo do partido</span>
+                )}
+              </p>
+            )}
+          </div>
         </div>
         <span className={`sit sit-${p.situacao[0]} grande`}>{p.situacao_tse.toLowerCase()}</span>
       </header>
@@ -146,6 +164,19 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
   )
 }
 
+function exportarMunicipios(p: Perfil, uf: DadosUF) {
+  baixarCsv(
+    `${p.urna} ${p.partido}-${p.uf} votos por municipio 2026.csv`,
+    ['Município', 'Microrregião', 'Mesorregião', 'Região imediata', 'Região intermediária', 'Votos',
+      'Votos válidos do município', '% do local', '% da base', 'Posição no município'],
+    p.mun.map((l) => {
+      const m = uf.municipios[l[0]]
+      return [m[0], nomeLocal(uf, 'micro', m[1]), nomeLocal(uf, 'meso', m[2]), nomeLocal(uf, 'rgi', m[3]),
+        nomeLocal(uf, 'rgint', m[4]), l[1], l[2], pctCsv(l[3]), pctCsv(l[4]), l[5]]
+    }),
+  )
+}
+
 function Cartao({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?: string }) {
   return (
     <div className="cartao">
@@ -189,10 +220,15 @@ function TabelaLocais({
 
   return (
     <>
-      <p className="legenda-tab">
-        <b>% do local</b>: fatia dos votos válidos do local que foi para {p.urna}. <b>% da base</b>: fatia da
-        votação total dele que veio do local. Clique numa linha (ou no mapa) para ver os municípios.
-      </p>
+      <div className="titulo-com-acao">
+        <p className="legenda-tab">
+          <b>% do local</b>: fatia dos votos válidos do local que foi para {p.urna}. <b>% da base</b>: fatia da
+          votação total dele que veio do local. Clique numa linha (ou no mapa) para ver os municípios.
+        </p>
+        <button className="botao" onClick={() => exportarMunicipios(p, uf)} title="Uma linha por município, com micro, meso e regiões do IBGE">
+          Baixar CSV por município
+        </button>
+      </div>
       <table className="tabela">
         <thead>
           <tr>

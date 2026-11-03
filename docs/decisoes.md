@@ -21,4 +21,5 @@ Formato: data · decisão · por quê · quem decidiu. Mudanças de rumo entram 
 | 2026-11-03 | Escala amarela clareada no fim (mínimo L 0,58) para não virar marrom | Legibilidade de "tons de amarelo" | Plano |
 | 2026-11-03 | **Republicanos, União Brasil e PP passam para Centro.** Direita: PL, Novo, Missão, DC, PRTB. Efeito no Brasil: Direita 47,0% → 26,5% dos válidos; Centro 26,7% → 47,2% | Revisão do Yuri | Yuri |
 | 2026-11-03 | **Posicionamento próprio por parlamentar** (`config/candidatos_ideologia.csv`): o campo marcado vale para o perfil (cor e rótulo) e para as somas regionais; seus votos nominais saem do campo do partido, e a legenda continua com o partido | Pedido do Yuri | Yuri |
+| 2026-11-03 | **Edição do posicionamento direto no app**: grava `config/candidatos_ideologia.csv` na `main` via API do GitHub, com chave de acesso (fine-grained, só este repositório, Contents: Read and write) guardada no navegador do Yuri; o commit republica o site e o app acompanha. Visitantes sem chave não veem o editor | Pedido do Yuri; sem servidor próprio, o GitHub é a fonte única e auditável | Yuri |
 

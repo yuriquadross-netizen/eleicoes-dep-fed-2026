@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
+import EditarPosicao from '../components/EditarPosicao'
 import Foto from '../components/Foto'
 import { baixarCsv, pctCsv } from '../csv'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
@@ -103,6 +104,7 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
         </div>
         <span className={`sit sit-${p.situacao[0]} grande`}>{p.situacao_tse.toLowerCase()}</span>
       </header>
+      <EditarPosicao p={p} codUf={String(Object.keys(uf.municipios)[0]).slice(0, 2)} />
 
       <div className="cartoes">
         <Cartao rotulo="Votos válidos" valor={num(p.votos)} nota={`${pct(p.votos / uf.validos, 2)} dos válidos da UF`} />

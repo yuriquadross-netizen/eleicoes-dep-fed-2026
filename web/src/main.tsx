@@ -6,6 +6,7 @@ import Brasil from './pages/Brasil'
 import SalvarOffline from './components/SalvarOffline'
 import Busca from './pages/Busca'
 import Candidato from './pages/Candidato'
+import Edicao from './pages/Edicao'
 import Regiao from './pages/Regiao'
 import UF from './pages/UF'
 
@@ -28,12 +29,16 @@ function App() {
           <Route path="/brasil" element={<Brasil />} />
           <Route path="/uf/:uf" element={<UF />} />
           <Route path="/r/:tipo/:id" element={<Regiao />} />
+          <Route path="/edicao" element={<Edicao />} />
           <Route path="*" element={<p className="aviso">Página não encontrada.</p>} />
         </Routes>
       </main>
       <footer className="rodape">
         <span>Fonte: TSE, dados abertos (1º turno). Divisões regionais: IBGE, via geobr/Ipea.</span>
-        <SalvarOffline />
+        <span className="offline">
+          <SalvarOffline />
+          <Link to="/edicao">Edição</Link>
+        </span>
       </footer>
     </HashRouter>
   )

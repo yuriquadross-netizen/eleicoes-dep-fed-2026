@@ -69,6 +69,8 @@ export interface Meta {
   ufs: string[]
   regioes: Record<string, { nome: string; ufs: string[] }>
   ufs_info: Record<string, { eleitos: number; validos: number; ideo: Ideo }>
+  /** [sq, urna, partido, uf, campo marcado, campo do partido, observação] */
+  posicoes_proprias?: [number, string, string, string, string, string, string][]
   classes: string[]
   ideologia: string
   fonte: string
@@ -103,7 +105,7 @@ export const ANO = 2026
 
 /** Perfis agrupados em arquivos por sq % GRUPOS (mesmo número de pipeline/exportar_web.py). */
 const GRUPOS_CANDIDATO = 256
-function grupoCandidato(sq: number | string): number {
+export function grupoCandidato(sq: number | string): number {
   // sq tem 12 dígitos: cabe com folga num número de ponto flutuante
   return Number(sq) % GRUPOS_CANDIDATO
 }

@@ -53,7 +53,9 @@ Recomendação de fórmula para 2026: nominais **+ legenda** no numerador, coere
 
 ## Como marcar um parlamentar com campo diferente do partido
 
-Edite `config/candidatos_ideologia.csv` (pelo GitHub, em *Edit*, ou peça ao Claude) e acrescente uma linha por parlamentar:
+**Pelo app (recomendado):** no rodapé, abra **Edição**, crie e cole a chave de acesso do GitHub (passo a passo na própria página; ela fica só no navegador daquele Mac). Depois, no perfil de qualquer parlamentar, use **Editar posicionamento** → escolha o campo (ou "Seguir o partido") → **Salvar para todos**. O app grava `config/candidatos_ideologia.csv` direto na `main` (um commit por edição, com mensagem "Posicionamento: NOME (PARTIDO-UF) → Campo"), o que dispara a republicação; o próprio app acompanha e avisa quando terminou (~3 min).
+
+**Pelo arquivo:** edite `config/candidatos_ideologia.csv` (pelo GitHub, em *Edit*, ou peça ao Claude) e acrescente uma linha por parlamentar:
 
 ```
 ano,sq_candidato,nome_urna,uf,partido,classe,observacao

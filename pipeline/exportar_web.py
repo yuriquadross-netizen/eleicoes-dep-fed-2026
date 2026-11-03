@@ -250,6 +250,13 @@ def main() -> None:
         "ano": a.ano, "gerado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ufs": disponiveis, "regioes": {k: {"nome": n, "ufs": u} for k, (n, u) in REGIOES.items()},
         "ufs_info": ufs_info, "classes": CLASSES,
+        # [sq, urna, partido, uf, campo marcado, campo do partido, observação]
+        "posicoes_proprias": [
+            [int(r.sq_candidato), info_cand.at[r.sq_candidato, "nome_urna"], info_cand.at[r.sq_candidato, "partido"],
+             info_cand.at[r.sq_candidato, "uf"], r.classe, classe_partido.get(info_cand.at[r.sq_candidato, "partido"]),
+             r.observacao if isinstance(r.observacao, str) else ""]
+            for r in proprias.itertuples() if r.sq_candidato in info_cand.index
+        ],
         "ideologia": "Votos nominais + legenda dos partidos de cada classe ÷ votos válidos. "
                      "Classificação: Aliança (config/partidos_ideologia.csv).",
         "fonte": "TSE — dados abertos (votação nominal por município e zona), 1º turno",

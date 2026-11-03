@@ -50,3 +50,6 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # O site tem ~14 mil arquivos; o Pages às vezes passa de 10 min (padrão) processando.
+          timeout: 1800000

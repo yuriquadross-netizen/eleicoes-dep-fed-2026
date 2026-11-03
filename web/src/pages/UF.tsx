@@ -8,10 +8,56 @@ import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
 
 const METRICAS = [
+  { k: -1, rotulo: 'Campo predominante' },
   { k: 0, rotulo: '% Direita' },
   { k: 1, rotulo: '% Centro' },
   { k: 2, rotulo: '% Esquerda' },
 ] as const
+type Metrica = (typeof METRICAS)[number]['k']
+
+const CAMPOS = ['Direita', 'Centro', 'Esquerda'] as const
+const RAMPAS = ['verde', 'amarelo', 'vermelho'] as const
+/** Faixas da fatia do campo vencedor → tons 1..6 da rampa (o tom 0, quase branco, fica de fora). */
+const FAIXAS = [0.4, 0.45, 0.5, 0.55, 0.65]
+const ROTULOS_FAIXAS = ['<40%', '40–45%', '45–50%', '50–55%', '55–65%', '≥65%']
+
+function faixa(fatia: number): number {
+  let k = 0
+  while (k < FAIXAS.length && fatia >= FAIXAS[k]) k++
+  return k + 1
+}
+
+/** Campo vencedor e sua fatia dos válidos. */
+function predominante(ideo: [number, number, number]): { campo: 0 | 1 | 2; fatia: number } {
+  const campo = ideo.indexOf(Math.max(...ideo)) as 0 | 1 | 2
+  return { campo, fatia: ideo[campo] }
+}
+
+function LegendaPredominante() {
+  return (
+    <figcaption className="legenda-mapa legenda-pred">
+      <span className="legenda-titulo">Cor = campo com mais votos na região; quanto mais escuro, maior a fatia dos válidos desse campo</span>
+      {CAMPOS.map((c, i) => (
+        <span key={c} className="pred-linha">
+          <span className="pred-nome">{c}</span>
+          <span className="rampa rampa-6">
+            {ROTULOS_FAIXAS.map((r, k) => (
+              <i key={r} style={{ background: `var(--seq-${RAMPAS[i]}-${k + 1})` }} title={`${c} com ${r} dos válidos`} />
+            ))}
+          </span>
+        </span>
+      ))}
+      <span className="pred-linha">
+        <span className="pred-nome" />
+        <span className="rampa-rotulos">
+          {ROTULOS_FAIXAS.map((r) => (
+            <span key={r}>{r}</span>
+          ))}
+        </span>
+      </span>
+    </figcaption>
+  )
+}
 
 export default function UF() {
   const { uf = '' } = useParams()
@@ -29,7 +75,7 @@ export default function UF() {
 function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta }) {
   const [divisao, setDivisao] = useDivisao()
   const [nivel, setNivel] = useState<'maior' | 'menor'>('menor')
-  const [metrica, setMetrica] = useState<0 | 1 | 2>(0)
+  const [metrica, setMetrica] = useState<Metrica>(-1)
   const navegar = useNavigate()
   const tipo: Tipo = TIPOS_DIVISAO[divisao][nivel]
   const regioes = u.regioes[tipo]
@@ -37,10 +83,13 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
   const itens = useMemo(() => {
     const m = new Map<number, ItemMapa>()
     for (const [id, r] of Object.entries(regioes)) {
+      const pred = r.ideo ? predominante(r.ideo) : null
       m.set(Number(id), {
         nome: r.nome,
-        valor: r.ideo?.[metrica] ?? 0,
+        valor: metrica === -1 ? (pred?.fatia ?? 0) : (r.ideo?.[metrica] ?? 0),
+        cor: metrica === -1 && pred ? `var(--seq-${RAMPAS[pred.campo]}-${faixa(pred.fatia)})` : undefined,
         detalhes: [
+          ...(pred ? ([['Predomina', `${CAMPOS[pred.campo]} (${pct(pred.fatia)})`]] as [string, string][]) : []),
           ['Válidos', num(r.validos)],
           ['Direita', pct(r.ideo?.[0] ?? 0)],
           ['Centro', pct(r.ideo?.[1] ?? 0)],
@@ -120,9 +169,14 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
         camada={tipo}
         itens={itens}
         formatar={(v) => pct(v)}
-        tituloLegenda={`${METRICAS[metrica].rotulo} dos votos válidos por ${NOME_TIPO[tipo].singular.toLowerCase()}`}
+        tituloLegenda={
+          metrica === -1
+            ? `Campo predominante por ${NOME_TIPO[tipo].singular.toLowerCase()}`
+            : `${METRICAS[metrica + 1].rotulo} dos votos válidos por ${NOME_TIPO[tipo].singular.toLowerCase()}`
+        }
         aoSelecionar={(id) => navegar(`/r/${tipo}/${id}`)}
-        rampa={(['verde', 'amarelo', 'vermelho'] as const)[metrica]}
+        rampa={metrica === -1 ? undefined : RAMPAS[metrica]}
+        legenda={metrica === -1 ? <LegendaPredominante /> : undefined}
       />
 
       <div className="duas-colunas">

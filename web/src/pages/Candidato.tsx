@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
 import {
-  api, geo, nomeLocal, NOME_TIPO, NOME_UF, type DadosUF, type LinhaLocal, type Nivel, type Perfil, type Tipo,
+  api, geo, nomeLocal, NOME_TIPO, NOME_UF, RAMPA_CLASSE, type DadosUF, type LinhaLocal, type Nivel, type Perfil, type Tipo,
 } from '../dados'
 import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
@@ -135,7 +135,8 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
         camada={camada}
         itens={itens}
         formatar={metrica === 'votos' ? num : (v) => pct(v)}
-        tituloLegenda={`${metrica === 'votos' ? 'Votos' : '% dos votos válidos do local'} de ${p.urna} por ${NOME_TIPO[camada].singular.toLowerCase()}`}
+        tituloLegenda={`${metrica === 'votos' ? 'Votos' : '% dos votos válidos do local'} de ${p.urna} por ${NOME_TIPO[camada].singular.toLowerCase()}${p.classe ? ` · cor do campo do partido (${p.classe})` : ''}`}
+        rampa={p.classe ? RAMPA_CLASSE[p.classe] : undefined}
         selecionado={camada === 'mun' ? null : aberto}
         aoSelecionar={selecionar}
       />

@@ -182,6 +182,9 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ## 5. Riscos e alarmes
 
+> **Ocorrido em 03/11/2026:** com um arquivo por candidato e por região (~16 mil arquivos), o GitHub Pages passou dos 10 min de limite duas vezes. Correção: perfis agrupados em 256 arquivos (`sq % 256`) e tops em um arquivo por tipo e UF (código IBGE de 2 dígitos), somando ~450 arquivos; o tempo-limite do envio também subiu para 30 min. **Não voltar a gravar um arquivo por item.**
+
+
 | Risco | Alarme (quando se descobre) | Plano B |
 |---|---|---|
 | TSE/IBGE inacessíveis (sandbox bloqueia; Actions pode sofrer bloqueio geográfico) | Passo 1.1, primeira execução | Liberar os domínios no ambiente da nuvem; ou rodar `make dados` no Mac e versionar `data/processed/`. |

@@ -97,13 +97,28 @@ function get<T>(caminho: string): Promise<T> {
 
 export const ANO = 2026
 
+/** Perfis agrupados em arquivos por sq % GRUPOS (mesmo número de pipeline/exportar_web.py). */
+const GRUPOS_CANDIDATO = 256
+function grupoCandidato(sq: number | string): number {
+  // sq tem 12 dígitos: cabe com folga num número de ponto flutuante
+  return Number(sq) % GRUPOS_CANDIDATO
+}
+function existe<T>(x: T | undefined, oque: string): T {
+  if (x === undefined) throw new Error(`${oque} ausente dos dados de ${ANO}`)
+  return x
+}
+
 export const api = {
   meta: () => get<Meta>(`data/${ANO}/meta.json`),
   busca: () =>
     get<{ campos: string[]; linhas: LinhaBusca[] }>(`data/${ANO}/busca.json`).then((b) => b.linhas),
-  perfil: (sq: number | string) => get<Perfil>(`data/${ANO}/candidato/${sq}.json`),
+  perfil: (sq: number | string) =>
+    get<Record<string, Perfil>>(`data/${ANO}/candidato/${grupoCandidato(sq)}.json`).then((g) => existe(g[String(sq)], 'Candidato')),
   uf: (uf: string) => get<DadosUF>(`data/${ANO}/uf/${uf}.json`),
-  top: (tipo: Nivel, id: number | string) => get<TopRegiao>(`data/${ANO}/regiao/${tipo}/${id}.json`),
+  top: (tipo: Nivel, id: number | string) =>
+    get<Record<string, TopRegiao>>(`data/${ANO}/regiao/${tipo}/${String(id).slice(0, 2)}.json`).then((g) =>
+      existe(g[String(id)], 'Região'),
+    ),
 }
 
 export const NOME_TIPO: Record<Nivel, { singular: string; plural: string }> = {

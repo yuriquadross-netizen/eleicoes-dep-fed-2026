@@ -4,9 +4,13 @@ Saídas em web/public/data/{ANO}/:
   meta.json                      ano, data de geração, UFs disponíveis, totais
   busca.json                     índice de busca: uma linha (array) por candidato com voto
   uf/{UF}.json                   nomes e hierarquia de municípios e regiões da UF + válidos + eleitos
-  candidato/{sq}.json            perfil: totais e, por recorte (micro, meso, rgi, rgint, mun),
+  candidato/{sq % 256}.json      {sq: perfil}: totais e, por recorte (micro, meso, rgi, rgint, mun),
                                  [id, votos, válidos, % do local, % da base, posição no local]
-  regiao/{tipo}/{id}.json        top 10 de cada micro/meso/rgi/rgint (Etapa 3)
+  regiao/{tipo}/{cod_uf}.json    {id: top 10} de cada micro/meso/rgi/rgint/município da UF
+
+Os perfis e os tops são agrupados em poucos arquivos (≈450 no total, em vez de ≈16 mil):
+o GitHub Pages passou do tempo-limite ao publicar um arquivo por candidato/região.
+O código IBGE de qualquer recorte começa pelos 2 dígitos da UF (cod_uf).
 
 Todas as porcentagens são calculadas aqui; o front só exibe.
 Uso: python pipeline/exportar_web.py --ano 2026 [--uf MG]
@@ -27,6 +31,7 @@ from comum import CONFIG, PROCESSED, REGIOES, UF_REGIAO, WEB_PUBLIC, args_padrao
 TIPOS = ["micro", "meso", "rgi", "rgint"]
 SIT_COD = {"Eleito": "E", "Suplente": "S", "Não eleito": "N", "Outros": "O"}
 TOP_N = 10
+GRUPOS_CANDIDATO = 256  # o front usa o mesmo número (web/src/dados.ts)
 CLASSES = ["Direita", "Centro", "Esquerda"]
 
 
@@ -53,6 +58,13 @@ def fatias(df: pd.DataFrame, col: str, validos: pd.Series) -> dict[int, list[flo
 def gravar(caminho: Path, obj) -> None:
     caminho.parent.mkdir(parents=True, exist_ok=True)
     caminho.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+
+def gravar_grupo(caminho: Path, itens: dict) -> None:
+    """Grava um arquivo-grupo {id: objeto}, mesclando com o que já existir (exportação parcial por UF)."""
+    if caminho.exists():
+        itens = {**json.loads(caminho.read_text(encoding="utf-8")), **itens}
+    gravar(caminho, itens)
 
 
 def r4(x: float) -> float:
@@ -99,6 +111,7 @@ def main() -> None:
 
     # ---- perfis de candidato
     por_cand = {n: dict(tuple(df.groupby("sq_candidato"))) for n, df in agg.items()}
+    grupos: dict[int, dict] = {}
     for c in cand.itertuples():
         perfil = {
             "sq": int(c.sq_candidato), "nr": c.nr, "nome": c.nome, "urna": c.nome_urna,
@@ -114,7 +127,9 @@ def main() -> None:
             df = df.sort_values("votos", ascending=False)
             perfil[n] = [[int(r.id), int(r.votos), int(r.validos), r4(r.pct_local), r4(r.pct_base), int(r.pos)]
                          for r in df.itertuples()]
-        gravar(destino / "candidato" / f"{c.sq_candidato}.json", perfil)
+        grupos.setdefault(int(c.sq_candidato) % GRUPOS_CANDIDATO, {})[str(c.sq_candidato)] = perfil
+    for g, itens in grupos.items():
+        gravar_grupo(destino / "candidato" / f"{g}.json", itens)
 
     # ---- índice de busca
     busca = [[int(c.sq_candidato), c.nome_urna, c.nome, c.partido, c.uf, SIT_COD[c.situacao], int(c.votos_total)]
@@ -166,16 +181,19 @@ def main() -> None:
         })
 
         # ---- top 10 por região (e por município)
+        cod_uf = str(int(m.cd_ibge.iloc[0]))[:2]
         for t in TIPOS + ["mun"]:
             df = agg[t].merge(m[[niveis[t]]].drop_duplicates().rename(columns={niveis[t]: "id"}), on="id")
+            tops = {}
             for rid, g in df.groupby("id"):
                 g = g.sort_values(["votos"], ascending=False).head(TOP_N)
                 top = [[int(r.sq_candidato), info_cand.at[r.sq_candidato, "nome_urna"],
                         info_cand.at[r.sq_candidato, "partido"], SIT_COD[info_cand.at[r.sq_candidato, "situacao"]],
                         int(r.votos), r4(r.pct_local), r4(r.pct_base)] for r in g.itertuples()]
-                gravar(destino / "regiao" / t / f"{rid}.json",
-                       {"tipo": t, "id": int(rid), "uf": uf, "validos": int(g.validos.iloc[0]),
-                        "ideo": ideo_nivel[t].get(int(rid)), "top": top})
+                assert str(int(rid)).startswith(cod_uf), f"{t} {rid} não começa com {cod_uf}"
+                tops[str(int(rid))] = {"tipo": t, "id": int(rid), "uf": uf, "validos": int(g.validos.iloc[0]),
+                                       "ideo": ideo_nivel[t].get(int(rid)), "top": top}
+            gravar(destino / "regiao" / t / f"{cod_uf}.json", tops)
 
     disponiveis = sorted(p.stem for p in (destino / "uf").glob("*.json"))
     gravar(destino / "meta.json", {

@@ -204,6 +204,14 @@ def main() -> None:
                      "Classificação: Aliança (config/partidos_ideologia.csv).",
         "fonte": "TSE — dados abertos (votação nominal por município e zona), 1º turno",
     })
+    # lista de tudo o que o botão "salvar para usar sem internet" precisa baixar
+    publico = WEB_PUBLIC
+    arquivos = sorted(
+        str(f.relative_to(publico)) for pasta in [destino, publico / "geo", publico / "fotos"]
+        if pasta.exists() for f in pasta.rglob("*") if f.is_file()
+    )
+    tamanho = sum((publico / f).stat().st_size for f in arquivos)
+    gravar(destino / "arquivos.json", {"total_bytes": tamanho, "arquivos": arquivos})
     tam = sum(f.stat().st_size for f in destino.rglob("*.json")) / 1e6
     print(f"OK {a.ano}: {len(cand)} perfis, UFs {', '.join(ufs) if len(ufs) < 27 else 'todas'}; {tam:.1f} MB")
 

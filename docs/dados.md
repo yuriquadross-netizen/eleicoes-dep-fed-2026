@@ -7,7 +7,7 @@
 | `votacao_candidato_munzona_{ANO}` | TSE, dados abertos (`cdn.tse.jus.br/estatistica/sead/odsele/`) | Votos por candidato × município × zona |
 | `detalhe_votacao_munzona_{ANO}` | TSE | Aptos, comparecimento, nominais, legenda, brancos e nulos por município × zona × cargo |
 | `votacao_partido_munzona_{ANO}` | TSE | Votos nominais + legenda por partido (leitura ideológica) |
-| `fotos_cand{ANO}_{UF}_div` | TSE | Fotos dos candidatos (Etapa 6; *confirmar nome*) |
+| `eleicoes{ANO}/fotos/foto_cand{ANO}_{UF}_div.zip` | TSE (`cdn.tse.jus.br/estatistica/sead/eleicoes/`) | Fotos de divulgação; arquivos `F{UF}{sq}_div.jpg`. Só os eleitos vão para o app |
 | geobr (Ipea), release `v2.0.0` no GitHub: `municipalities_2024_simplified`, `microregions_2020_simplified`, `mesoregions_2020_simplified`, `immediateregions_2019_simplified`, `intermediateregions_2019_simplified` | IBGE via Ipea | Polígonos e, por junção espacial, município → micro, meso, imediata, intermediária |
 | `betafcc/Municipios-Brasileiros-TSE` (GitHub) | comunidade | Código TSE ↔ código IBGE (o que faltar é casado por nome + UF) |
 

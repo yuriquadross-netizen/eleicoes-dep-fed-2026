@@ -29,3 +29,6 @@ teste:            ## valida contra a planilha 2022 da Aliança
 geo:              ## gera os mapas por UF (web/public/geo/)
 	cd pipeline/node && npm install --silent
 	$(PY) pipeline/geometrias.py --uf $(UF)
+
+fotos:            ## baixa e reduz as fotos dos eleitos (web/public/fotos/)
+	$(PY) pipeline/fotos.py --ano $(ANO) --uf $(UF)

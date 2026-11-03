@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
 import BarraIdeo from '../components/BarraIdeo'
+import Foto from '../components/Foto'
+import { baixarCsv, pctCsv } from '../csv'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
 import { api, geo, NOME_TIPO, NOME_UF, type DadosUF, type Meta, type Tipo } from '../dados'
 import { TIPOS_DIVISAO, useDivisao } from '../divisao'
@@ -181,7 +183,26 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
 
       <div className="duas-colunas">
         <div>
-          <h2>{NOME_TIPO[tipo].plural}</h2>
+          <div className="titulo-com-acao">
+            <h2>{NOME_TIPO[tipo].plural}</h2>
+            <button
+              className="botao"
+              onClick={() =>
+                baixarCsv(
+                  `${u.uf} ${NOME_TIPO[tipo].plural} 2026.csv`,
+                  [NOME_TIPO[tipo].singular, 'Votos válidos', '% Direita', '% Centro', '% Esquerda', 'Campo predominante',
+                    'Mais votado', 'Partido', '% do local (mais votado)'],
+                  linhas.map(([, r]) => [
+                    r.nome, r.validos, ...(r.ideo ? r.ideo.map(pctCsv) : ['', '', '']),
+                    r.ideo ? CAMPOS[predominante(r.ideo).campo] : '',
+                    r.lider?.[1], r.lider?.[2], r.lider ? pctCsv(r.lider[4]) : '',
+                  ]),
+                )
+              }
+            >
+              Baixar CSV
+            </button>
+          </div>
           <table className="tabela">
             <thead>
               <tr>
@@ -232,9 +253,12 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
               {u.eleitos.map((e, i) => (
                 <tr key={e[0]}>
                   <td className="pos">{i + 1}</td>
-                  <td>
-                    <Link to={`/candidato/${e[0]}`}>{e[1]}</Link>
-                    <small>{e[2]}</small>
+                  <td className="com-foto">
+                    <Foto sq={e[0]} nome={e[1]} />
+                    <span>
+                      <Link to={`/candidato/${e[0]}`}>{e[1]}</Link>
+                      <small>{e[2]}</small>
+                    </span>
                   </td>
                   <td className="n">{num(e[3])}</td>
                 </tr>

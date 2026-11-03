@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
 import BarraIdeo from '../components/BarraIdeo'
+import Foto from '../components/Foto'
+import { baixarCsv, pctCsv } from '../csv'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
 import {
   api, FILHO, geo, IDX_TIPO, NOME_SIT, NOME_TIPO, NOME_UF, nomeLocal, PAI,
@@ -98,7 +100,21 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
             <h3>{num(r.validos)} votos válidos para deputado federal</h3>
             <BarraIdeo ideo={r.ideo} />
           </div>
-          <h2 style={{ marginTop: 0 }}>Os 10 mais votados</h2>
+          <div className="titulo-com-acao">
+            <h2 style={{ marginTop: 0 }}>Os 10 mais votados</h2>
+            <button
+              className="botao"
+              onClick={() =>
+                baixarCsv(
+                  `${nome} ${u.uf} top 10 2026.csv`,
+                  ['Posição', 'Candidato', 'Partido', 'Situação', 'Votos', '% do local', '% da base'],
+                  r.top.map((t, i) => [i + 1, t[1], t[2], NOME_SIT[t[3]], t[4], pctCsv(t[5]), pctCsv(t[6])]),
+                )
+              }
+            >
+              Baixar CSV
+            </button>
+          </div>
           <table className="tabela">
             <thead>
               <tr>
@@ -113,11 +129,14 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
               {r.top.map((t, i) => (
                 <tr key={t[0]}>
                   <td className="pos">{i + 1}</td>
-                  <td>
-                    <Link to={`/candidato/${t[0]}`}>{t[1]}</Link>
-                    <small>
-                      {t[2]} · <span className={`sit sit-${t[3]}`}>{NOME_SIT[t[3]]}</span>
-                    </small>
+                  <td className="com-foto">
+                    {t[3] === 'E' ? <Foto sq={t[0]} nome={t[1]} /> : <span className="foto-vazia" />}
+                    <span>
+                      <Link to={`/candidato/${t[0]}`}>{t[1]}</Link>
+                      <small>
+                        {t[2]} · <span className={`sit sit-${t[3]}`}>{NOME_SIT[t[3]]}</span>
+                      </small>
+                    </span>
                   </td>
                   <td className="n">{num(t[4])}</td>
                   <td className="n">{pct(t[5])}</td>

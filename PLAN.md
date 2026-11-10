@@ -1,4 +1,4 @@
-# PLAN — Mapa da Base de Votos · Deputados Federais e Estaduais 2026
+# PLAN — Mapa da Base de Votos · Congresso 2026 (Câmara, Senado e Assembleias)
 
 > Documento vivo. Atualize o **Status** e marque os passos concluídos (`[x]`) ao fim de cada sessão.
 > Mudou uma decisão? Registre em `docs/decisoes.md` antes de mudar o código.
@@ -15,7 +15,11 @@
 
 **Status (10/11/2026):** **Fase 1 (deputados federais) concluída e publicada** em https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/ (etapas 0–6, incluindo fotos, CSV, uso sem internet, edição do posicionamento pelo app e tipologia de Ames). Cada merge em `main` republica sozinho. A Etapa 7 (comparativo 2022→2026) segue opcional, aguardando aval.
 
-**Fase 2 (em andamento): deputados estaduais (e distritais no DF).** Replicar para eles toda a análise dos federais, com um seletor **Federal | Estadual** no topo, a mesma tabela ideológica de partidos e, ao final, a análise de **dobradinhas** (pares federal–estadual com bases sobrepostas). Plano nas Etapas 8–11. **Próximo passo: 8.0.**
+**Fase 2 (planejada): deputados estaduais (e distritais no DF).** Toda a análise dos federais replicada para eles, com um seletor de cargo no topo, a mesma tabela ideológica e, ao final, a análise de **dobradinhas**. Etapas 8–11.
+
+**Fase 3 (planejada): home do cenário nacional e Senado.** Página inicial sobre o Congresso **eleito para 2027** (hemiciclos da Câmara e do Senado na cor dos campos, aritmética de votações, renovação, mapa do Brasil, maiores votações e puxadores, governadores 2026, bancadas e variação desde 2022) e a mesma análise dos deputados para os **senadores eleitos em 2022 e 2026**, com os **suplentes em exercício** vindos da API de dados abertos do Senado. Etapas 12–15.
+
+**Ordem de execução recomendada:** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. **Próximo passo: 12.1.**
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -39,6 +43,12 @@
 | D12 | **Estadual = `CD_CARGO` 7 (Deputado Estadual) + 8 (Deputado Distrital, DF)** | No DF o cargo equivalente é o distrital | Excluir o DF |
 | D13 | **Mesma tabela ideológica de partidos para os dois cargos**; casos individuais pela edição de posicionamento (mesmo `config/candidatos_ideologia.csv`, com coluna `cargo`) | Decisão do Yuri (10/11); manutenção única | Ajuste por estado |
 | D14 | **Dobradinhas** só depois do estadual básico no ar (Etapa 11), com métrica escolhida num passo de pesquisa | É a análise mais nova e com mais risco metodológico; não pode atrasar o resto | Fazer junto (atrasa a entrega visível) |
+| D15 | **A home vira a página inicial (`#/`)**; a busca vai para `#/buscar`, com redirecionamento dos links antigos | O app passa a abrir pelo panorama nacional, que é o ponto de partida da análise | Home como página secundária |
+| D16 | **Senado como terceiro cargo do seletor** (Federal / Estadual / Senado), com duas disputas: 2022 (1 vaga por UF) e 2026 (2 vagas por UF) | Reaproveita a infraestrutura de cargo da Etapa 8 e todas as análises | Seção à parte só para o Senado |
+| D17 | **A home mostra a composição eleita para 2027** (decisão do Yuri, 10/11). Senado 2027 = 54 eleitos em 2026 + 27 da turma de 2022 com o ocupante atual; se o titular de 2022 foi eleito governador ou vice em 2026, a cadeira aparece como "suplente deve assumir" | É o Congresso que vai decidir a partir de 2027 | Composição atual em exercício; comparação atual × eleita |
+| D18 | **Hemiciclo colorido por campo** (verde/amarelo/vermelho), partidos agrupados da Esquerda (à esquerda) à Direita, com tooltip por partido | Três cores legíveis e coerentes com o resto do app; a identidade do partido fica no tooltip e na tabela ao lado | Uma cor por partido (cerca de 20 cores, ilegível e conflitante com os campos) |
+| D19 | **Variação de bancadas via tabela de sucessão de partidos** (`config/partidos_sucessao.csv`) | Fusões entre 2022 e 2026 (PRD, Mobiliza, Democrata, Agir etc.) tornariam a comparação por sigla enganosa | Comparar siglas cruas |
+| D20 | **Suplentes em exercício vêm da API do Senado** (decisão do Yuri), gravados como retrato versionado (`data/processed/senado_exercicio.parquet`) e atualizados pelo pipeline; reserva: lista mantida à mão editável pelo app | Fonte oficial, sem trabalho manual; o retrato versionado mantém o site funcionando mesmo se a API cair | Consulta ao vivo pelo navegador (dependência externa a cada acesso) |
 
 **Decisão em aberto para o Yuri:** o repositório é **público** e, portanto, o site no Pages também é. Os dados do TSE são públicos, mas a tabela de ideologia é julgamento da Aliança. Para restringir o acesso, seria preciso tornar o repo privado e usar GitHub Pro (US$ 4/mês) ou outro host. O padrão até nova ordem é site público, sem marca, com URL não divulgada.
 
@@ -245,6 +255,45 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ---
 
+## FASE 3 — Home do cenário nacional e Senado
+
+> Pedido do Yuri (10/11/2026): uma página inicial com a leitura geral do Congresso que toma posse em 2027 (hemiciclos da Câmara e do Senado na cor dos campos, aritmética de votações, renovação, mapa do Brasil, maiores votações e puxadores, governadores 2026, bancadas e variação) e a mesma análise dos deputados para os senadores eleitos em 2022 e em 2026, indicando os suplentes que assumiram no lugar de titulares que saíram.
+>
+> **Ordem de execução recomendada (Fases 2 e 3 juntas):** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. A Etapa 12 é uma vitória rápida que só usa dados já prontos. A Etapa 8 cria a infraestrutura de cargo (seletor e rotas), que o Senado reaproveita na Etapa 14.
+
+### Etapa 12 — Home com o hemiciclo da Câmara · *Visível: ao abrir o app, a home mostra as 513 cadeiras da Câmara eleita para 2027, coloridas por campo, com as bancadas.*
+
+- [ ] **12.1 Rotas:** a home passa a ser `#/`, e a busca vai para `#/buscar`. Links antigos (`#/?q=…`, `#/?partido=…`) redirecionam para `#/buscar?…`. **Onde:** `web/src/main.tsx`, `web/src/pages/Home.tsx` (novo), `Busca.tsx`. **Verificar:** smoke test de todas as rotas; um link antigo de busca abre a busca com o filtro. **Cerca:** sem análises ainda.
+- [ ] **12.2 Componente `Hemiciclo`:** SVG de assentos em arcos (algoritmo padrão de "parliament diagram": fileiras concêntricas, assentos distribuídos proporcionalmente ao comprimento de cada fileira), partidos agrupados da Esquerda (à esquerda) ao Centro e à Direita, cor do campo (verde/amarelo/vermelho), separação fina entre partidos, tooltip com partido, campo e cadeiras, legenda com a contagem de cada campo. **Onde:** `web/src/components/Hemiciclo.tsx`. **Verificar:** 513 assentos desenhados e soma por campo igual à de `meta.json`; captura conferida. **Cerca:** um só componente, reaproveitado no Senado; nada de cor por partido (D18).
+- [ ] **12.3 Bancadas 2027:** tabela de partidos da Câmara (cadeiras, campo, federação) ao lado do hemiciclo. **Verificar:** soma 513. **Cerca:** a variação desde 2022 fica para a Etapa 15.
+- [ ] **12.4 Publicar.**
+
+### Etapa 13 — Dados do Senado e composição 2027 · *Visível: a home ganha o hemiciclo do Senado (81 cadeiras), com os suplentes em exercício marcados.*
+
+- [ ] **13.1 Pesquisar e liberar o acesso aos dados do Senado.** Pedir a liberação de `legis.senado.leg.br` pelas ferramentas de ambiente (o ambiente atual é o Default; criar um ambiente pessoal do repositório com os hosts do TSE e do Senado, conforme a regra da ferramenta). Confirmar, na API de dados abertos (`/dadosabertos/senador/lista/atual` e o histórico de mandatos/exercícios), os campos de: titular ou suplente, data de início do exercício, motivo do afastamento do titular e código do parlamentar. **Verificar:** uma chamada devolve os 81 senadores em exercício; registrar os campos em `docs/dados.md`. **Se a API recusar** (bloqueio ou fora do ar): usar a lista mantida à mão (13.4b).
+- [ ] **13.2 Resultados do Senado no TSE:** `tabelas.py --cargo senado` para 2022 (1 vaga por UF) e 2026 (2 vagas por UF), `CD_CARGO = 5`. **Pesquisar antes:** a convenção do "% do local" quando cada eleitor dá 2 votos (2026): usar a mesma do TSE (votos do candidato ÷ total de votos válidos para senador, que soma os dois votos) e explicar na nota de método. **Verificar:** 27 eleitos em 2022 e 54 em 2026, 1 e 2 por UF.
+- [ ] **13.3 Candidaturas (suplentes e CPF):** baixar `consulta_cand_{2022,2026}.zip` do TSE (`cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/`) para obter o 1º e o 2º suplentes de cada chapa de senador (cargos 9 e 10) e o CPF de todos os candidatos (usado também na renovação, 15.2). **Verificar:** cada senador eleito tem dois suplentes; CPFs presentes nos eleitos.
+- [ ] **13.4 Composição do Senado em 2027** → `data/processed/senado_2027.parquet`: 54 cadeiras dos eleitos em 2026 e 27 da turma de 2022, com o **ocupante atual** (API do Senado). Previsão: se o titular de 2022 foi eleito governador ou vice em 2026 (cruzamento por CPF com o cargo 3/4 de 2026), a cadeira fica marcada como "suplente deve assumir em 2027", com o nome do suplente. **(b) Alternativa manual:** `config/senado_exercicio.csv`, editável pelo app, como o posicionamento. **Verificar:** 81 cadeiras; cada suplente em exercício traz o titular e o motivo; os casos de titular eleito governador são listados no log.
+- [ ] **13.5 Hemiciclo do Senado na home**, com marcação visual de suplente em exercício (contorno) e tooltip "suplente de X (motivo)". **Verificar:** 81 assentos; captura conferida.
+
+### Etapa 14 — Senado no app · *Visível: o seletor ganha a opção "Senado"; cada senador tem perfil com mapa, % do local e % da base, e cada região mostra o top 10 da disputa.*
+
+- [ ] **14.1** Exportar `data/2026s/` (disputa de 2026) e `data/2022s/` (disputa de 2022), no mesmo formato dos deputados. **Depende da Etapa 8** (infraestrutura de cargo).
+- [ ] **14.2** Seletor "Federal | Estadual | Senado". No modo Senado, a página da UF mostra as duas turmas ("Eleitos em 2026 · mandato 2027–2035" e "Eleito em 2022 · mandato 2023–2031"), quem está em exercício e os suplentes; o top 10 por região é por disputa (2026 ou 2022). A busca cobre as duas disputas, com o ano indicado.
+- [ ] **14.3** Perfil do senador: mapa, tabela, leitura ideológica, tipologia (`tipologia.py --cargo senado`), fotos (zips do TSE) e, quando for o caso, "em exercício: suplente X desde dd/mm/aaaa". **Verificar:** capturas de um senador de 2026, de um de 2022 com suplente em exercício e de um titular eleito governador.
+
+### Etapa 15 — Home analítica · *Visível: a home traz as seis análises pedidas, com links para as páginas de detalhe.*
+
+- [ ] **15.1 Aritmética de votações:** cadeiras de cada campo e de cada soma de campos (D, C, E, D+C, C+E, D+E) frente a: maioria absoluta (257 / 41), emenda constitucional (3/5: 308 / 49) e minoria de bloqueio de emenda (206 / 33). Mostrar, para Câmara e Senado, quem alcança cada patamar. **Verificar:** contas conferidas à mão contra `meta.json`. **Cerca:** sem simular votações reais; é aritmética de cadeiras.
+- [ ] **15.2 Renovação:** Câmara: reeleitos (eleitos em 2022 e em 2026, cruzados por CPF), novatos e "não voltaram", com o destino destes (não concorreu; concorreu e perdeu; foi para Senado, governo ou Assembleia). Senado: das 54 vagas de 2026, quantos titulares da turma de 2018 voltaram. **Pesquisar antes:** baixar o resultado do Senado de 2018 do TSE (`consulta_cand_2018` ou `votacao_candidato_munzona_2018`, cargo 5, só os eleitos). **Verificar:** reeleitos + novatos = 513; nenhum eleito sem cruzamento (se houver, listar e resolver por nome + UF).
+- [ ] **15.3 Bancadas e variação desde 2022:** cadeiras por partido e por federação em 2022 e em 2026, agregando partidos fundidos pela tabela `config/partidos_sucessao.csv` (ex.: PTB e Patriota → PRD; PSC → Podemos; PROS → Solidariedade; PMN → Mobiliza; PMB → Democrata; PTC → Agir). **O Yuri revisa a tabela de sucessão.** Senado: composição 2027 frente à de 2023 (turmas de 2018 e 2022). **Verificar:** totais 513 e 81 nos dois anos.
+- [ ] **15.4 Mapa do Brasil:** TopoJSON nacional (UFs e micros, dissolvidos do geobr) com campo predominante por UF e por micro (Câmara 2026), Senado 2026 (disputa de 2026) e governadores (15.6). Clique leva à página da UF ou da região. **Verificar:** 27 UFs e 558 micros; tamanho do arquivo abaixo de 2 MB.
+- [ ] **15.5 Maiores votações e puxadores:** os 20 deputados mais votados do país (votos, % dos válidos da UF, quantos quocientes eleitorais os votos representam, QE = válidos ÷ cadeiras da UF) e os senadores mais votados. **Cerca:** "quantos quocientes" é estimativa do peso do puxador, não o número exato de eleitos por ele; dizer isso na tela.
+- [ ] **15.6 Governadores 2026:** eleitos (1º ou 2º turno; **pesquisar antes** se o turno 2 está no mesmo arquivo do TSE, `NR_TURNO = 2`), partido, campo e votação, em mapa e lista. **Verificar:** 27 governadores.
+- [ ] **15.7 Publicar** e revisar a home inteira com o Yuri.
+
+---
+
 ## 5. Riscos e alarmes
 
 > **Ocorrido em 03/11/2026:** com um arquivo por candidato e por região (~16 mil arquivos), o GitHub Pages passou dos 10 min de limite duas vezes. Correção: perfis agrupados em 256 arquivos (`sq % 256`) e tops em um arquivo por tipo e UF (código IBGE de 2 dígitos), somando ~450 arquivos; o tempo-limite do envio também subiu para 30 min. **Não voltar a gravar um arquivo por item.**
@@ -262,6 +311,10 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 | (Fase 2) Número de eleitos estaduais não bate com o tamanho da Assembleia | Passo 9.1 (checagem automática) | Investigar `DS_SIT_TOT_TURNO` da UF (recontagens, decisões judiciais) e documentar exceções em `docs/dados.md` |
 | (Fase 2) Site grande demais ou publicação lenta | Passo 9.3 | Mais grupos de perfis; tops por município só para municípios com voto |
 | (Fase 2) Métrica de dobradinha enviesada por capitais | Passo 11.1 (critério do mesmo partido) | Usar a métrica (c), corrigida pelo eleitorado, ou excluir a capital do cálculo |
+| (Fase 3) API do Senado inacessível (rede do ambiente, bloqueio a IPs estrangeiros no GitHub Actions ou instabilidade) | Passo 13.1 | Retrato versionado gerado onde a API responder; em último caso, `config/senado_exercicio.csv` mantido à mão pelo app |
+| (Fase 3) Cruzamento de pessoas entre eleições falha (renovação, suplentes, governadores) | Passos 13.3 e 15.2 (contagem de eleitos sem par) | CPF da `consulta_cand`; sem CPF, nome + UF com revisão manual dos casos listados |
+| (Fase 3) Fusões e federações confundem a variação de bancadas | Passo 15.3 | Tabela de sucessão revisada pelo Yuri antes de publicar |
+| (Fase 3) Governadores em 2º turno ausentes do arquivo | Passo 15.6 | Arquivo de 2º turno do TSE (pesquisar o nome do conjunto) |
 
 ---
 

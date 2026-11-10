@@ -7,6 +7,7 @@ import SalvarOffline from './components/SalvarOffline'
 import Busca from './pages/Busca'
 import Candidato from './pages/Candidato'
 import Edicao from './pages/Edicao'
+import Metodo from './pages/Metodo'
 import Regiao from './pages/Regiao'
 import UF from './pages/UF'
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="/uf/:uf" element={<UF />} />
           <Route path="/r/:tipo/:id" element={<Regiao />} />
           <Route path="/edicao" element={<Edicao />} />
+          <Route path="/metodo" element={<Metodo />} />
           <Route path="*" element={<p className="aviso">Página não encontrada.</p>} />
         </Routes>
       </main>

@@ -13,7 +13,7 @@
 
 **Referência de validação:** `pipeline/tests/fixtures/planilha_alianca_2022_mg.csv` traz o mapeamento de 2022 feito pela Aliança (MG, 66 micros × top 10). Rodar o pipeline com `ANO=2022` precisa reproduzir esses números. Esse é o teste de que os dados de 2026 estarão certos.
 
-**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Publicado em 02/11/2026** no GitHub Pages: https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/ . Cada merge em `main` republica automaticamente. **Etapas 2, 3 e 5 concluídas** (mapa, navegação Brasil › UF › região com top 10 e leitura ideológica com a classificação confirmada pelo Yuri em 02/11). **Etapa 6 concluída** (exceto o item opcional 6.3). **Próximo passo:** opcionais 6.3 (tipologia de Ames) e Etapa 7 (comparativo 2022→2026), só com aval do Yuri.
+**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Publicado em 02/11/2026** no GitHub Pages: https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/ . Cada merge em `main` republica automaticamente. **Etapas 2, 3 e 5 concluídas** (mapa, navegação Brasil › UF › região com top 10 e leitura ideológica com a classificação confirmada pelo Yuri em 02/11). **Etapa 6 concluída** (exceto o item opcional 6.3). **Etapa 6 concluída, inclusive a tipologia (6.3).** **Próximo passo:** Etapa 7 (comparativo 2022→2026), só com aval do Yuri.
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -169,7 +169,7 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 - [x] **6.1 Offline:** (feito com vite-plugin-pwa 2.0.0; mais um botão no rodapé, "Salvar para usar sem internet", que baixa os ~960 arquivos listados em `data/2026/arquivos.json`) `vite-plugin-pwa` com precache do app e cache em tempo de execução para `data/` e `geo/`. **Verificar:** abrir, visitar 3 perfis, desligar o Wi-Fi e reabrir.
 - [x] **6.2 Fotos dos eleitos:** (`pipeline/fotos.py`; 513 fotos, 1,6 MB, versionadas em `web/public/fotos/`) pacote de fotos do TSE (`fotos_cand{ANO}_{UF}_div.zip`; *confirmar nome*), redimensionadas para 160 px em WebP, **só para eleitos**.
-- [ ] **6.3 (opcional) Tipologia de base eleitoral à la Barry Ames:** concentrada × dispersa (I de Moran entre micros) e dominante × compartilhada (média de `part_dep_regiao` ponderada). Mostrar como selo no perfil, com nota metodológica.
+- [x] **6.3 Tipologia de base eleitoral (Ames):** feita em `pipeline/tipologia.py`. A concentração usa o índice G em vez do I de Moran, que fica como contiguidade (ver docs/decisoes.md). Selo no perfil, gráfico de dispersão na UF, página `#/metodo`. Texto original do item: concentrada × dispersa (I de Moran entre micros) e dominante × compartilhada (média de `part_dep_regiao` ponderada). Mostrar como selo no perfil, com nota metodológica.
 - [x] **6.4 Exportar:** (perfil: CSV por município com os quatro recortes; UF: CSV das regiões; região: CSV do top 10) botão "Baixar CSV" no perfil e no top 10 (para planilhas da Aliança).
 
 ---

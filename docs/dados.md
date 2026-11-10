@@ -68,3 +68,8 @@ ano,sq_candidato,nome_urna,uf,partido,classe,observacao
 - **Efeito:** o perfil mostra "posicionamento próprio (partido: …)" e muda a cor do mapa. Nas barras e mapas regionais, os votos nominais da pessoa passam para o campo marcado; os votos de legenda continuam com o partido.
 - A marcação aparece no site público.
 
+## Tipologia da base eleitoral
+
+`pipeline/tipologia.py` → `data/processed/tipologia_{ANO}.parquet` (uma linha por candidato com voto):
+`concentracao` (índice G), `moran` e `p_moran` (999 permutações; vizinhança por fronteira comum na malha do geobr, com tolerância de 200 m), `dominancia`, `concentrada`, `dominante`, `tipo`, `pct_*` (percentil entre os eleitos da UF), medianas da UF e `confiabilidade`. Método completo na página `#/metodo` do app.
+

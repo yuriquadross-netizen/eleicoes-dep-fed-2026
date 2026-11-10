@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
+import BaseTipologia from '../components/BaseTipologia'
 import EditarPosicao from '../components/EditarPosicao'
 import Foto from '../components/Foto'
 import { baixarCsv, pctCsv } from '../csv'
@@ -117,8 +118,9 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
             nota={`${pct(forte[4])} da votação dele`}
           />
         )}
-        <Cartao rotulo="Concentração" valor={`${ate50} micro${ate50 > 1 ? 's' : ''}`} nota="somam metade dos votos dele" />
+        <Cartao rotulo="Metade dos votos" valor={`${ate50} micro${ate50 > 1 ? 's' : ''}`} nota="concentram metade da votação dele" />
       </div>
+      {p.tipologia && <BaseTipologia t={p.tipologia} uf={p.uf} />}
 
       <div className="abas" role="tablist">
         {(['micro', 'meso', 'rgi', 'rgint'] as Tipo[]).map((t) => (

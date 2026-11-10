@@ -27,6 +27,8 @@ export interface Perfil {
   classe_partido?: Classe | null
   /** presente quando o parlamentar foi marcado com campo próprio (config/candidatos_ideologia.csv); texto = observação */
   posicao_propria?: string | null
+  /** tipologia da base eleitoral (pipeline/tipologia.py); ausente no DF */
+  tipologia?: Tipologia | null
   mun: LinhaLocal[]
   micro: LinhaLocal[]
   meso: LinhaLocal[]
@@ -58,6 +60,13 @@ export interface DadosUF {
   eleitos: [number, string, string, number][]
   bancada: Record<string, number>
   n_candidatos: number
+  tipologia?: {
+    mediana_concentracao: number
+    mediana_dominancia: number
+    confiabilidade: 'ok' | 'baixa'
+    /** [sq, urna, partido, campo, concentração, dominância, tipo] */
+    eleitos: [number, string, string, Classe | null, number, number, TipoBase][]
+  } | null
 }
 
 /** [sq, urna, nome, partido, uf, sit, votos] */
@@ -184,4 +193,43 @@ export const RAMPA_CLASSE: Record<Classe, 'verde' | 'amarelo' | 'vermelho'> = {
   Direita: 'verde',
   Centro: 'amarelo',
   Esquerda: 'vermelho',
+}
+
+export type TipoBase =
+  | 'concentrada-dominante'
+  | 'concentrada-compartilhada'
+  | 'dispersa-dominante'
+  | 'dispersa-compartilhada'
+
+export interface Tipologia {
+  tipo: TipoBase
+  concentracao: number
+  dominancia: number
+  moran: number
+  contigua: boolean
+  pct_concentracao: number
+  pct_dominancia: number
+  perto_do_limite: boolean
+  confiabilidade: 'ok' | 'baixa'
+}
+
+/** Nome curto e descrição de cada tipo (Barry Ames). Descritivo, não é juízo de valor. */
+export const TIPO_BASE: Record<TipoBase, { nome: string; descricao: string }> = {
+  'concentrada-dominante': {
+    nome: 'Concentrada e dominante',
+    descricao: 'Votos reunidos num território onde é a principal referência: um “distrital de fato”.',
+  },
+  'concentrada-compartilhada': {
+    nome: 'Concentrada e compartilhada',
+    descricao: 'Votos reunidos num território disputado com muitos outros candidatos, típico de grandes cidades.',
+  },
+  'dispersa-dominante': {
+    nome: 'Dispersa e dominante',
+    descricao: 'Forte em muitos municípios espalhados pelo estado, sem depender de uma única região.',
+  },
+  'dispersa-compartilhada': {
+    nome: 'Dispersa e compartilhada',
+    descricao:
+      'Voto espalhado e minoritário em muitos lugares, sem território próprio; típico de candidaturas de opinião, bandeira ou segmento.',
+  },
 }

@@ -109,6 +109,24 @@ def gravar_grupo(caminho: Path, itens: dict) -> None:
     gravar(caminho, itens)
 
 
+PERTO_DO_LIMITE = 0.1  # a menos de 10 pontos percentuais da mediana dos eleitos da UF
+
+
+def tipo_de(tipologia: pd.DataFrame | None, sq: int) -> dict | None:
+    """Tipologia da base (pipeline/tipologia.py) no formato do perfil; None sem dado (ex.: DF)."""
+    if tipologia is None or sq not in tipologia.index:
+        return None
+    t = tipologia.loc[sq]
+    return {
+        "tipo": t.tipo, "concentracao": r4(t.concentracao), "dominancia": r4(t.dominancia),
+        "moran": r4(t.moran), "contigua": bool(t.contigua),
+        "pct_concentracao": r4(t.pct_concentracao), "pct_dominancia": r4(t.pct_dominancia),
+        "perto_do_limite": bool(abs(t.pct_concentracao - 0.5) < PERTO_DO_LIMITE
+                                or abs(t.pct_dominancia - 0.5) < PERTO_DO_LIMITE),
+        "confiabilidade": t.confiabilidade,
+    }
+
+
 def r4(x: float) -> float:
     return round(float(x), 5)
 
@@ -125,6 +143,8 @@ def main() -> None:
     votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{a.ano}.parquet")
     validos = pd.read_parquet(PROCESSED / f"validos_mun_{a.ano}.parquet")
 
+    caminho_tip = PROCESSED / f"tipologia_{a.ano}.parquet"
+    tipologia = pd.read_parquet(caminho_tip).set_index("sq_candidato") if caminho_tip.exists() else None
     proprias = posicoes_proprias(a.ano, cand)
     ideo = ideologia(a.ano, mun, proprias, cand)
     ideo = ideo[ideo.uf.isin(ufs)]
@@ -168,6 +188,7 @@ def main() -> None:
             "classe": propria_classe.get(c.sq_candidato, classe_partido.get(c.partido)),
             "classe_partido": classe_partido.get(c.partido),
             "posicao_propria": propria_obs.get(c.sq_candidato),
+            "tipologia": tipo_de(tipologia, c.sq_candidato),
         }
         for n in niveis:
             df = por_cand[n].get(c.sq_candidato)
@@ -224,10 +245,23 @@ def main() -> None:
                    for c in c_uf[c_uf.situacao == "Eleito"].itertuples()]
         bancada = c_uf[c_uf.situacao == "Eleito"].partido.value_counts().to_dict()
         ufs_info[uf] = {"eleitos": len(eleitos), "validos": int(val.validos.sum()), "ideo": ideo_uf}
+        tip_uf = None
+        if tipologia is not None and (tipologia.uf == uf).any():
+            t_uf = tipologia[tipologia.uf == uf]
+            pontos = []
+            for c in c_uf[c_uf.situacao == "Eleito"].itertuples():
+                if c.sq_candidato in t_uf.index:
+                    t = t_uf.loc[c.sq_candidato]
+                    pontos.append([int(c.sq_candidato), c.nome_urna, c.partido,
+                                   propria_classe.get(c.sq_candidato, classe_partido.get(c.partido)),
+                                   r4(t.concentracao), r4(t.dominancia), t.tipo])
+            tip_uf = {"mediana_concentracao": r4(t_uf.mediana_concentracao_uf.iloc[0]),
+                      "mediana_dominancia": r4(t_uf.mediana_dominancia_uf.iloc[0]),
+                      "confiabilidade": t_uf.confiabilidade.iloc[0], "eleitos": pontos}
         gravar(destino / "uf" / f"{uf}.json", {
             "uf": uf, "regiao": UF_REGIAO[uf], "validos": int(val.validos.sum()), "ideo": ideo_uf,
             "municipios": municipios, "regioes": regioes, "eleitos": eleitos, "bancada": bancada,
-            "n_candidatos": int(len(c_uf)),
+            "n_candidatos": int(len(c_uf)), "tipologia": tip_uf,
         })
 
         # ---- top 10 por região (e por município)

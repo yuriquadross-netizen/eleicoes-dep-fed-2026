@@ -1,4 +1,4 @@
-# PLAN — Mapa da Base de Votos · Deputados Federais 2026
+# PLAN — Mapa da Base de Votos · Deputados Federais e Estaduais 2026
 
 > Documento vivo. Atualize o **Status** e marque os passos concluídos (`[x]`) ao fim de cada sessão.
 > Mudou uma decisão? Registre em `docs/decisoes.md` antes de mudar o código.
@@ -13,7 +13,9 @@
 
 **Referência de validação:** `pipeline/tests/fixtures/planilha_alianca_2022_mg.csv` traz o mapeamento de 2022 feito pela Aliança (MG, 66 micros × top 10). Rodar o pipeline com `ANO=2022` precisa reproduzir esses números. Esse é o teste de que os dados de 2026 estarão certos.
 
-**Status (02/11/2026):** Etapas 0 e 1 concluídas no código, com dados reais de 2026 para o Brasil inteiro (7.051 candidatos com voto, 513 eleitos). O pipeline reproduz a planilha 2022 da Aliança linha a linha (`make teste`). **Publicado em 02/11/2026** no GitHub Pages: https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/ . Cada merge em `main` republica automaticamente. **Etapas 2, 3 e 5 concluídas** (mapa, navegação Brasil › UF › região com top 10 e leitura ideológica com a classificação confirmada pelo Yuri em 02/11). **Etapa 6 concluída** (exceto o item opcional 6.3). **Etapa 6 concluída, inclusive a tipologia (6.3).** **Próximo passo:** Etapa 7 (comparativo 2022→2026), só com aval do Yuri.
+**Status (10/11/2026):** **Fase 1 (deputados federais) concluída e publicada** em https://yuriquadross-netizen.github.io/eleicoes-dep-fed-2026/ (etapas 0–6, incluindo fotos, CSV, uso sem internet, edição do posicionamento pelo app e tipologia de Ames). Cada merge em `main` republica sozinho. A Etapa 7 (comparativo 2022→2026) segue opcional, aguardando aval.
+
+**Fase 2 (em andamento): deputados estaduais (e distritais no DF).** Replicar para eles toda a análise dos federais, com um seletor **Federal | Estadual** no topo, a mesma tabela ideológica de partidos e, ao final, a análise de **dobradinhas** (pares federal–estadual com bases sobrepostas). Plano nas Etapas 8–11. **Próximo passo: 8.0.**
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -32,6 +34,11 @@
 | D7 | **Geometrias regionais por dissolução da malha municipal** (mapshaper) | Garante que mapa e números usem exatamente o mesmo mapeamento município→região. | Baixar malhas de micro/meso prontas: risco de divergir do mapeamento usado nas contas. |
 | D8 | **Pipeline roda no GitHub Actions ou localmente; `data/processed/` é versionado** | O TSE é bloqueado na sandbox. O resultado de 2026 é final e é regenerado raramente. | Baixar o TSE a cada deploy: lento e frágil. |
 | D9 | **Ano parametrizado (`ANO=2026` ou `2022`)** | Permite validar com 2022 e abre caminho para o comparativo 2022→2026. | Ano fixo no código. |
+| D10 | **Cargo como parâmetro em todo o pipeline e no app** (`--cargo federal` ou `--cargo estadual`). O federal mantém os nomes de arquivo e os endereços atuais; o estadual ganha sufixo `_estadual` (tabelas), pasta `data/2026e/` (JSON) e prefixo `#/estadual/...` (rotas) | Reaproveita 100% do código já validado; os links e o cache offline dos federais continuam valendo | Um segundo app ou repositório (duplica manutenção); coluna `cargo` dentro das tabelas atuais (mexe em tudo o que já funciona) |
+| D11 | **Seletor Federal / Estadual no cabeçalho**; ao trocar, a página equivalente abre no outro cargo (UF, região, Brasil); no perfil, volta para a busca | Um só app no Dock, navegação idêntica nos dois cargos | Seções separadas (navegação duplicada) |
+| D12 | **Estadual = `CD_CARGO` 7 (Deputado Estadual) + 8 (Deputado Distrital, DF)** | No DF o cargo equivalente é o distrital | Excluir o DF |
+| D13 | **Mesma tabela ideológica de partidos para os dois cargos**; casos individuais pela edição de posicionamento (mesmo `config/candidatos_ideologia.csv`, com coluna `cargo`) | Decisão do Yuri (10/11); manutenção única | Ajuste por estado |
+| D14 | **Dobradinhas** só depois do estadual básico no ar (Etapa 11), com métrica escolhida num passo de pesquisa | É a análise mais nova e com mais risco metodológico; não pode atrasar o resto | Fazer junto (atrasa a entrega visível) |
 
 **Decisão em aberto para o Yuri:** o repositório é **público** e, portanto, o site no Pages também é. Os dados do TSE são públicos, mas a tabela de ideologia é julgamento da Aliança. Para restringir o acesso, seria preciso tornar o repo privado e usar GitHub Pro (US$ 4/mês) ou outro host. O padrão até nova ordem é site público, sem marca, com URL não divulgada.
 
@@ -180,6 +187,64 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ---
 
+## FASE 2 — Deputados estaduais
+
+> Regra geral desta fase: **nada do que funciona para os federais pode mudar de comportamento.** Todo passo que mexe em código compartilhado termina rodando o teste de não-regressão (8.0).
+
+### Etapa 8 — Esqueleto estadual (MG) · *Visível: no app, o Yuri troca para "Estadual", busca um deputado estadual de MG e vê perfil, mapa e tabela de micros.*
+
+- [ ] **8.0 Teste de não-regressão dos federais**
+  - **Objetivo:** guardar um "retrato" dos federais e comparar depois de cada mudança.
+  - **Onde:** `pipeline/retrato_federal.py` (grava hashes dos parquet federais e de 20 JSON de amostra — 5 perfis, 5 UFs, 10 regiões — em `pipeline/tests/fixtures/retrato_federal.json`) e `pipeline/tests/test_regressao_federal.py` (recalcula e compara).
+  - **Verificar:** gerar o retrato, rodar o teste duas vezes sem mudança → passa; alterar um número num JSON exportado → falha.
+  - **Cerca:** só leitura; não altera pipeline nem app.
+
+- [ ] **8.1 `tabelas.py --cargo`**
+  - **Objetivo:** gerar `votos_cand_mun_2026_estadual.parquet`, `validos_mun_2026_estadual.parquet`, `candidatos_2026_estadual.parquet` e `partido_mun_2026_estadual.parquet` com `CD_CARGO in (7, 8)`.
+  - **Onde:** `pipeline/tabelas.py`, `pipeline/comum.py` (constante `CARGOS = {"federal": [6], "estadual": [7, 8]}` e função `sufixo(cargo)` que devolve `""` ou `"_estadual"`).
+  - **Verificar:** `python pipeline/tabelas.py --ano 2026 --cargo estadual --uf MG` → 943 candidatos e **77 eleitos**; a soma dos válidos estaduais de MG é igual ao total de `QT_TOTAL_VOTOS_VALIDOS` do cargo 7 no `detalhe_votacao_munzona` de MG; o teste 8.0 passa (federais intactos).
+  - **Cerca:** não mudar nomes de arquivo federais.
+
+- [ ] **8.2 `exportar_web.py --cargo`**
+  - **Objetivo:** exportar o estadual para `web/public/data/2026e/`, no mesmo formato do federal. `posicoes_proprias` filtra o CSV pela coluna `cargo` (linha sem `cargo` = federal).
+  - **Onde:** `pipeline/exportar_web.py`, `config/candidatos_ideologia.csv` (acrescentar a coluna `cargo`).
+  - **Verificar:** `meta.json` de `2026e` com MG; perfil de um eleito estadual com micros e `% da base` somando 1,0; teste 8.0 passa.
+  - **Cerca:** tipologia e fotos ficam para a Etapa 10.
+
+- [ ] **8.3 App: contexto de cargo, rotas e seletor**
+  - **Objetivo:** `CargoContext` derivado do prefixo da rota (`#/estadual/...`); `api.*` lê de `data/2026/` ou `data/2026e/`; links gerados por um helper `rota(cargo, caminho)`; seletor no cabeçalho; título "Deputados Estaduais · 2026" (no DF, "Distritais").
+  - **Onde:** `web/src/cargo.ts` (novo), `web/src/dados.ts`, `web/src/main.tsx`, páginas existentes.
+  - **Verificar:** script Playwright com todas as rotas federais do smoke test atual, mais `#/estadual/` e `#/estadual/candidato/<sq de MG>`; zero erros; capturas conferidas.
+  - **Cerca:** nenhuma página nova; só parametrizar as existentes.
+
+- [ ] **8.4 Publicar** (pull request, merge, conferir o deploy).
+
+### Etapa 9 — Estaduais no Brasil inteiro · *Visível: qualquer UF no modo Estadual, com a Assembleia, mapa por campo predominante e top 10 por região.*
+
+- [ ] **9.1** Rodar 8.1–8.2 para as 27 UFs. **Verificar:** eleitos por UF = tamanho legal da Assembleia (CF art. 27: 3 × deputados federais até 36; acima disso, 24 + deputados federais; DF = 24). O script falha listando as divergências. **Cerca:** sem mudanças de interface.
+- [ ] **9.2** Páginas Brasil, UF e região no modo estadual: "Assembleia Legislativa de MG · 77 cadeiras", bancada, eleitos, campo predominante, top 10 por micro, meso e município. **Verificar:** capturas de MG, SP, DF e RR. **Cerca:** reaproveitar os componentes; sem gráficos novos.
+- [ ] **9.3** Orçamento de publicação: `find web/dist -type f | wc -l` < 2.500 e `du -sh web/dist` < 300 MB; deploy em menos de 3 min. **Se estourar:** aumentar os grupos de perfis (256 → 512) só no estadual.
+
+### Etapa 10 — Recursos completos para estaduais · *Visível: fotos, tipologia, CSV, edição e uso offline também no modo Estadual.*
+
+- [ ] **10.1** `fotos.py --cargo estadual` (os zips do TSE já baixados contêm os estaduais). **Verificar:** cerca de 1.059 fotos, sem faltantes.
+- [ ] **10.2** `tipologia.py --cargo estadual`. **Verificar:** distribuição por tipo em MG e SP; DF sem tipologia.
+- [ ] **10.3** A edição de posicionamento grava `cargo` no CSV. **Verificar:** teste com API do GitHub simulada (como na Fase 1) para um estadual e um federal.
+- [ ] **10.4** Offline: um `arquivos.json` por cargo; o botão salva o cargo selecionado. **Verificar:** teste sem internet em páginas estaduais não visitadas.
+- [ ] **10.5** CSV com o cargo no nome do arquivo. **Verificar:** baixar os três CSVs no modo estadual.
+
+### Etapa 11 — Dobradinhas · *Visível: no perfil, "parceiros prováveis" do outro cargo, com o grau de sobreposição; na UF, a lista dos pares mais fortes.*
+
+- [ ] **11.1 Pesquisar e decidir a métrica** (registrar em `docs/decisoes.md`). Candidatas:
+  (a) correlação de Pearson das fatias municipais (x_m = v_m / T_m) dos dois candidatos;
+  (b) sobreposição de base Σ min(p_m^A, p_m^B), com p = distribuição dos votos do candidato;
+  (c) a métrica (b) corrigida pelo esperado se ambos votassem como o eleitorado.
+  **Risco conhecido:** em (b), dois candidatos de capital parecem "parceiros" só por dependerem da capital. **Critério de escolha:** em MG e SP, entre os 5 parceiros mais fortes de cada eleito, a fração do mesmo partido ou federação deve ser alta, e pares de capital sem afinidade partidária não devem dominar.
+- [ ] **11.2** `pipeline/dobradinhas.py` → `data/processed/dobradinhas_2026.parquet` (top 5 parceiros por candidato; só candidatos com pelo menos 0,1% dos válidos da UF). **Verificar:** simetria (se A lista B com força s, B lista A com a mesma s quando ambos estão no top).
+- [ ] **11.3** Perfil (bloco "Parceiros prováveis", com link para o perfil no outro cargo) e UF (tabela dos 20 pares mais fortes). **Cerca:** descrever como "bases sobrepostas", nunca afirmar acordo político; nota de método explicando.
+
+---
+
 ## 5. Riscos e alarmes
 
 > **Ocorrido em 03/11/2026:** com um arquivo por candidato e por região (~16 mil arquivos), o GitHub Pages passou dos 10 min de limite duas vezes. Correção: perfis agrupados em 256 arquivos (`sq % 256`) e tops em um arquivo por tipo e UF (código IBGE de 2 dígitos), somando ~450 arquivos; o tempo-limite do envio também subiu para 30 min. **Não voltar a gravar um arquivo por item.**
@@ -193,6 +258,10 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 | Pipeline não reproduz a planilha 2022 | Passo 1.3 (pytest) | Testar definições alternativas de "válidos" e registrar em `docs/dados.md`. Tolerância máxima de 0,5% com nota explicando. |
 | Site grande demais para o Pages (limite de 1 GB; 100 MB por arquivo) | Passo 4.2 | Compactar o formato; cortar o detalhe municipal de candidatos com poucos votos (< 1.000). |
 | Classificação ideológica vira ponto político sensível num site público | Etapa 5 | Exibir a fonte ("classificação: Aliança, revisão de dd/mm/aaaa"); ou tornar o repo privado (ver decisão em aberto). |
+| (Fase 2) Mudança compartilhada quebra os federais | Teste 8.0 a cada passo | Reverter o passo; o federal é o produto já em uso |
+| (Fase 2) Número de eleitos estaduais não bate com o tamanho da Assembleia | Passo 9.1 (checagem automática) | Investigar `DS_SIT_TOT_TURNO` da UF (recontagens, decisões judiciais) e documentar exceções em `docs/dados.md` |
+| (Fase 2) Site grande demais ou publicação lenta | Passo 9.3 | Mais grupos de perfis; tops por município só para municípios com voto |
+| (Fase 2) Métrica de dobradinha enviesada por capitais | Passo 11.1 (critério do mesmo partido) | Usar a métrica (c), corrigida pelo eleitorado, ou excluir a capital do cálculo |
 
 ---
 

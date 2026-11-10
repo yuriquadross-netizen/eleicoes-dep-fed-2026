@@ -19,7 +19,7 @@
 
 **Fase 3 (planejada): home do cenário nacional e Senado.** Página inicial sobre o Congresso **eleito para 2027** (hemiciclos da Câmara e do Senado na cor dos campos, aritmética de votações, renovação, mapa do Brasil, maiores votações e puxadores, governadores 2026, bancadas e variação desde 2022) e a mesma análise dos deputados para os **senadores eleitos em 2022 e 2026**, com os **suplentes em exercício** vindos da API de dados abertos do Senado. Etapas 12–15.
 
-**Ordem de execução recomendada:** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. **Etapa 12 pronta** (home com o hemiciclo da Câmara; publicação no PR). **Próximo passo: 8.0.**
+**Ordem de execução recomendada:** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. **Etapa 12 pronta** (home com o hemiciclo da Câmara; publicação no PR). **Etapa 8 pronta no código** (publicação no PR). **Próximo passo: 13.1.**
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -203,25 +203,25 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 8 — Esqueleto estadual (MG) · *Visível: no app, o Yuri troca para "Estadual", busca um deputado estadual de MG e vê perfil, mapa e tabela de micros.*
 
-- [ ] **8.0 Teste de não-regressão dos federais**
+- [x] **8.0 Teste de não-regressão dos federais**
   - **Objetivo:** guardar um "retrato" dos federais e comparar depois de cada mudança.
   - **Onde:** `pipeline/retrato_federal.py` (grava hashes dos parquet federais e de 20 JSON de amostra — 5 perfis, 5 UFs, 10 regiões — em `pipeline/tests/fixtures/retrato_federal.json`) e `pipeline/tests/test_regressao_federal.py` (recalcula e compara).
   - **Verificar:** gerar o retrato, rodar o teste duas vezes sem mudança → passa; alterar um número num JSON exportado → falha.
   - **Cerca:** só leitura; não altera pipeline nem app.
 
-- [ ] **8.1 `tabelas.py --cargo`**
+- [x] **8.1 `tabelas.py --cargo`** (MG: 943 candidatos, 77 eleitos; válidos = soma nominal + legenda dos partidos; o PCB, que só disputou cargos estaduais, entrou como Esquerda)
   - **Objetivo:** gerar `votos_cand_mun_2026_estadual.parquet`, `validos_mun_2026_estadual.parquet`, `candidatos_2026_estadual.parquet` e `partido_mun_2026_estadual.parquet` com `CD_CARGO in (7, 8)`.
   - **Onde:** `pipeline/tabelas.py`, `pipeline/comum.py` (constante `CARGOS = {"federal": [6], "estadual": [7, 8]}` e função `sufixo(cargo)` que devolve `""` ou `"_estadual"`).
   - **Verificar:** `python pipeline/tabelas.py --ano 2026 --cargo estadual --uf MG` → 943 candidatos e **77 eleitos**; a soma dos válidos estaduais de MG é igual ao total de `QT_TOTAL_VOTOS_VALIDOS` do cargo 7 no `detalhe_votacao_munzona` de MG; o teste 8.0 passa (federais intactos).
   - **Cerca:** não mudar nomes de arquivo federais.
 
-- [ ] **8.2 `exportar_web.py --cargo`**
+- [x] **8.2 `exportar_web.py --cargo`**
   - **Objetivo:** exportar o estadual para `web/public/data/2026e/`, no mesmo formato do federal. `posicoes_proprias` filtra o CSV pela coluna `cargo` (linha sem `cargo` = federal).
   - **Onde:** `pipeline/exportar_web.py`, `config/candidatos_ideologia.csv` (acrescentar a coluna `cargo`).
   - **Verificar:** `meta.json` de `2026e` com MG; perfil de um eleito estadual com micros e `% da base` somando 1,0; teste 8.0 passa.
   - **Cerca:** tipologia e fotos ficam para a Etapa 10.
 
-- [ ] **8.3 App: contexto de cargo, rotas e seletor**
+- [x] **8.3 App: contexto de cargo, rotas e seletor** (também: dados com `?v=<versão>` no endereço e `meta.json` buscado primeiro na rede, para o cache offline nunca misturar código novo com dado velho; ver o incidente de 10/11 em docs/decisoes.md)
   - **Objetivo:** `CargoContext` derivado do prefixo da rota (`#/estadual/...`); `api.*` lê de `data/2026/` ou `data/2026e/`; links gerados por um helper `rota(cargo, caminho)`; seletor no cabeçalho; título "Deputados Estaduais · 2026" (no DF, "Distritais").
   - **Onde:** `web/src/cargo.ts` (novo), `web/src/dados.ts`, `web/src/main.tsx`, páginas existentes.
   - **Verificar:** script Playwright com todas as rotas federais do smoke test atual, mais `#/estadual/` e `#/estadual/candidato/<sq de MG>`; zero erros; capturas conferidas.

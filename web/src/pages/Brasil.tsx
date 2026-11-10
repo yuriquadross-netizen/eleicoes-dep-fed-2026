@@ -1,11 +1,14 @@
-import { Link } from 'react-router-dom'
+
 import BarraIdeo from '../components/BarraIdeo'
-import { api, NOME_UF } from '../dados'
+import { apiDe, NOME_UF } from '../dados'
 import { num, useCarregar, useTitulo } from '../formato'
+import { nomeDoCargo, useCargo } from '../cargo'
+import LinkC from '../components/LinkC'
 
 export default function Brasil() {
+  const cargo = useCargo()
   useTitulo('Estados')
-  const [meta, erro] = useCarregar(() => api.meta(), [])
+  const [meta, erro] = useCarregar(() => apiDe(cargo).meta(), [cargo])
   if (erro) return <p className="aviso">Não foi possível carregar os dados ({erro}).</p>
   if (!meta) return <p className="aviso">Carregando…</p>
 
@@ -20,7 +23,7 @@ export default function Brasil() {
       <h1>Brasil</h1>
       <div className="bloco">
         <h3>
-          {num(total.eleitos)} cadeiras · {num(total.validos)} votos válidos para deputado federal
+          {num(total.eleitos)} cadeiras · {num(total.validos)} votos válidos para {nomeDoCargo(cargo)}
         </h3>
         <BarraIdeo ideo={[total.d / total.validos, total.c / total.validos, total.e / total.validos]} />
       </div>
@@ -30,14 +33,23 @@ export default function Brasil() {
           <div className="grade-ufs">
             {r.ufs.map((uf) => {
               const i = meta.ufs_info[uf]
+              if (!i) {
+                // UF ainda sem dados neste cargo (estaduais entram por etapas)
+                return (
+                  <div key={uf} className="card-uf indisponivel">
+                    <strong>{NOME_UF[uf]}</strong>
+                    <small>em breve</small>
+                  </div>
+                )
+              }
               return (
-                <Link key={uf} to={`/uf/${uf}`} className="card-uf">
+                <LinkC key={uf} to={`/uf/${uf}`} className="card-uf">
                   <strong>{NOME_UF[uf]}</strong>
                   <small>
                     {i.eleitos} cadeiras · {num(i.validos)} válidos
                   </small>
                   <BarraIdeo ideo={i.ideo} compacta />
-                </Link>
+                </LinkC>
               )
             })}
           </div>

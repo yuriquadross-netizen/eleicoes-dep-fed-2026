@@ -26,7 +26,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from comum import CONFIG, PROCESSED, REGIOES, UF_REGIAO, WEB_PUBLIC, args_padrao, ufs_de  # noqa: E402
+from comum import CONFIG, PROCESSED, REGIOES, UF_REGIAO, WEB_PUBLIC, args_padrao, pasta_web, sufixo, ufs_de  # noqa: E402
 
 TIPOS = ["micro", "meso", "rgi", "rgint"]
 SIT_COD = {"Eleito": "E", "Suplente": "S", "Não eleito": "N", "Outros": "O"}
@@ -35,13 +35,16 @@ GRUPOS_CANDIDATO = 256  # o front usa o mesmo número (web/src/dados.ts)
 CLASSES = ["Direita", "Centro", "Esquerda"]
 
 
-def posicoes_proprias(ano: int, cand: pd.DataFrame) -> pd.DataFrame:
+def posicoes_proprias(ano: int, cand: pd.DataFrame, cargo: str = "federal") -> pd.DataFrame:
     """Parlamentares marcados com campo diferente do partido (config/candidatos_ideologia.csv).
 
     Colunas: ano, sq_candidato, nome_urna, uf, partido, classe, observacao. Só sq_candidato e
     classe são usados; nome, UF e partido servem para leitura humana e são conferidos."""
     pp = pd.read_csv(CONFIG / "candidatos_ideologia.csv", dtype={"sq_candidato": "int64"})
     pp = pp[pp.ano == ano]
+    # linha sem cargo (ou arquivo sem a coluna) = federal: marcações feitas antes da Fase 2
+    cargos = pp["cargo"].fillna("federal").replace("", "federal") if "cargo" in pp.columns else "federal"
+    pp = pp[cargos == cargo] if not isinstance(cargos, str) else (pp if cargo == "federal" else pp.iloc[0:0])
     invalidas = sorted(set(pp.classe) - set(CLASSES))
     if invalidas:
         raise SystemExit(f"Classe inválida em config/candidatos_ideologia.csv: {invalidas} (use {CLASSES})")
@@ -57,13 +60,13 @@ def posicoes_proprias(ano: int, cand: pd.DataFrame) -> pd.DataFrame:
     return pp[["sq_candidato", "classe", "observacao"]]
 
 
-def ideologia(ano: int, mun: pd.DataFrame, proprias: pd.DataFrame, cand: pd.DataFrame) -> pd.DataFrame:
+def ideologia(ano: int, mun: pd.DataFrame, proprias: pd.DataFrame, cand: pd.DataFrame, suf: str = "") -> pd.DataFrame:
     """Votos (nominais + legenda) por classe ideológica e município, a partir de
     config/partidos_ideologia.csv. Falha se algum partido com voto não tiver classe.
 
     Parlamentar com posicionamento próprio: seus votos nominais saem do campo do partido e
     vão para o campo dele; os votos de legenda continuam com o partido."""
-    pm = pd.read_parquet(PROCESSED / f"partido_mun_{ano}.parquet")
+    pm = pd.read_parquet(PROCESSED / f"partido_mun_{ano}{suf}.parquet")
     cls = pd.read_csv(CONFIG / "partidos_ideologia.csv")
     faltam = sorted(set(pm.partido) - set(cls.sigla))
     if faltam:
@@ -78,7 +81,7 @@ def ideologia(ano: int, mun: pd.DataFrame, proprias: pd.DataFrame, cand: pd.Data
     propria_obs = {sq: (o if isinstance(o, str) else "") for sq, o in zip(proprias.sq_candidato, proprias.observacao)}
     if len(proprias):
         print(f"  {len(proprias)} parlamentar(es) com posicionamento próprio")
-        votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{ano}.parquet")
+        votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{ano}{suf}.parquet")
         partido = cand.set_index("sq_candidato").partido
         for r in proprias.itertuples():
             de = classe_partido[partido[r.sq_candidato]]
@@ -134,19 +137,20 @@ def r4(x: float) -> float:
 def main() -> None:
     a = args_padrao(__doc__)
     ufs = ufs_de(a.uf)
-    destino = WEB_PUBLIC / "data" / str(a.ano)
+    suf = sufixo(a.cargo)
+    destino = WEB_PUBLIC / "data" / pasta_web(a.ano, a.cargo)
     if a.uf.upper() == "BR" and destino.exists():
         shutil.rmtree(destino)
 
     mun = pd.read_parquet(PROCESSED / "municipios.parquet")
-    cand = pd.read_parquet(PROCESSED / f"candidatos_{a.ano}.parquet")
-    votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{a.ano}.parquet")
-    validos = pd.read_parquet(PROCESSED / f"validos_mun_{a.ano}.parquet")
+    cand = pd.read_parquet(PROCESSED / f"candidatos_{a.ano}{suf}.parquet")
+    votos = pd.read_parquet(PROCESSED / f"votos_cand_mun_{a.ano}{suf}.parquet")
+    validos = pd.read_parquet(PROCESSED / f"validos_mun_{a.ano}{suf}.parquet")
 
-    caminho_tip = PROCESSED / f"tipologia_{a.ano}.parquet"
+    caminho_tip = PROCESSED / f"tipologia_{a.ano}{suf}.parquet"
     tipologia = pd.read_parquet(caminho_tip).set_index("sq_candidato") if caminho_tip.exists() else None
-    proprias = posicoes_proprias(a.ano, cand)
-    ideo = ideologia(a.ano, mun, proprias, cand)
+    proprias = posicoes_proprias(a.ano, cand, a.cargo)
+    ideo = ideologia(a.ano, mun, proprias, cand, suf)
     ideo = ideo[ideo.uf.isin(ufs)]
     cls = pd.read_csv(CONFIG / "partidos_ideologia.csv")
     classe_partido = dict(zip(cls.sigla, cls.classe))
@@ -280,17 +284,18 @@ def main() -> None:
             gravar(destino / "regiao" / t / f"{cod_uf}.json", tops)
 
     disponiveis = sorted(p.stem for p in (destino / "uf").glob("*.json"))
-    gravar(destino / "meta.json", {
-        "ano": a.ano, "gerado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "ufs": disponiveis, "regioes": {k: {"nome": n, "ufs": u} for k, (n, u) in REGIOES.items()},
-        "ufs_info": ufs_info, "classes": CLASSES,
-        # Câmara eleita: [sq, urna, partido, uf, campo (próprio ou do partido), federação]
-        "camara": [
+    # Câmara eleita (só no federal): [sq, urna, partido, uf, campo (próprio ou do partido), federação]
+    camara = [] if a.cargo != "federal" else [
             [int(c.sq_candidato), c.nome_urna, c.partido, c.uf,
              propria_classe.get(c.sq_candidato, classe_partido.get(c.partido)),
              c.federacao if isinstance(c.federacao, str) else None]
             for c in cand[cand.situacao == "Eleito"].sort_values(["partido", "uf", "nome_urna"]).itertuples()
-        ],
+        ]
+    gravar(destino / "meta.json", {
+        "ano": a.ano, "gerado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "ufs": disponiveis, "regioes": {k: {"nome": n, "ufs": u} for k, (n, u) in REGIOES.items()},
+        **({"cargo": a.cargo} if a.cargo != "federal" else {}), "ufs_info": ufs_info, "classes": CLASSES,
+        **({"camara": camara} if a.cargo == "federal" else {}),
         # [sq, urna, partido, uf, campo marcado, campo do partido, observação]
         "posicoes_proprias": [
             [int(r.sq_candidato), info_cand.at[r.sq_candidato, "nome_urna"], info_cand.at[r.sq_candidato, "partido"],

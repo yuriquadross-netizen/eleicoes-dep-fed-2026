@@ -2,9 +2,10 @@
 // Cor = campo ideológico (verde/amarelo/vermelho). Pontos de 9 px com anel da cor da superfície.
 import { scaleLinear } from 'd3-scale'
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import { TIPO_BASE, type DadosUF, type TipoBase } from '../dados'
 import { pct } from '../formato'
+import { useNavegarC } from './LinkC'
 
 const L = 640
 const A = 420
@@ -18,7 +19,7 @@ const QUADRANTES: [TipoBase, 'e' | 'd', 't' | 'b'][] = [
 ]
 
 export default function DispersaoTipologia({ tip }: { tip: NonNullable<DadosUF['tipologia']> }) {
-  const navegar = useNavigate()
+  const navegar = useNavegarC()
   const caixa = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null)
   const pts = tip.eleitos

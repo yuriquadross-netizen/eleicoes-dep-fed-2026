@@ -18,8 +18,14 @@ export default defineConfig({
         navigateFallback: 'index.html',
         runtimeCaching: [
           {
-            // dados e mapas: abre do que está guardado e atualiza em segundo plano
-            urlPattern: /\/(data|geo)\/.+\.json$/,
+            // meta.json define a versão dos dados: sempre da rede quando houver conexão
+            urlPattern: /\/data\/[^/]+\/meta\.json$/,
+            handler: 'NetworkFirst',
+            options: { cacheName: 'base-de-votos-dados', networkTimeoutSeconds: 5 },
+          },
+          {
+            // dados (com ?v=versão) e mapas: abre do que está guardado e atualiza em segundo plano
+            urlPattern: /\/(data|geo)\/.+\.json(\?.*)?$/,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'base-de-votos-dados', expiration: { maxEntries: 2000 } },
           },

@@ -9,7 +9,8 @@ Saídas em data/processed/ (uma por ano):
   ficam com zero, como na planilha da Aliança. Ver docs/dados.md.
   partido_mun_{ANO}.parquet     partido, federacao, cd_ibge, nominais, legenda   (leitura ideológica)
 
-Uso: python pipeline/tabelas.py --ano 2026 [--uf MG]
+Uso: python pipeline/tabelas.py --ano 2026 [--uf MG] [--cargo federal|estadual]
+Cargo estadual = Deputado Estadual (7) e Deputado Distrital (8, DF); arquivos com sufixo _estadual.
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ import duckdb
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from comum import CARGO_DEP_FEDERAL, INTERIM, PROCESSED, RAW_TSE, args_padrao, ufs_de  # noqa: E402
+from comum import CARGOS, INTERIM, PROCESSED, RAW_TSE, args_padrao, sufixo, ufs_de  # noqa: E402
 
 SITUACAO = {
     "ELEITO POR QP": "Eleito",
@@ -48,12 +49,12 @@ def ler(con: duckdb.DuckDBPyConnection, caminho: Path) -> str:
             f"all_varchar=true)")
 
 
-def processar_uf(con, ano: int, uf: str, mun: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def processar_uf(con, ano: int, uf: str, mun: pd.DataFrame, cargos: str) -> dict[str, pd.DataFrame]:
     con.register("mun", mun[["cd_tse", "cd_ibge"]])
     out = {}
 
     f = extrair("votacao_candidato_munzona", ano, uf)
-    base = f"select * from {ler(con, f)} where CAST(CD_CARGO AS INT) = {CARGO_DEP_FEDERAL} and NR_TURNO = '1'"
+    base = f"select * from {ler(con, f)} where CAST(CD_CARGO AS INT) IN ({cargos}) and NR_TURNO = '1'"
     out["votos"] = con.sql(f"""
         select CAST(c.SQ_CANDIDATO AS BIGINT) sq_candidato, m.cd_ibge,
                SUM(CAST(c.QT_VOTOS_NOMINAIS_VALIDOS AS BIGINT)) votos,
@@ -83,7 +84,7 @@ def processar_uf(con, ano: int, uf: str, mun: pd.DataFrame) -> dict[str, pd.Data
                SUM(CAST(QT_VOTOS_BRANCOS AS BIGINT)) brancos,
                SUM(CAST(QT_TOTAL_VOTOS_NULOS AS BIGINT)) nulos
         from {ler(con, f)} d join mun m on m.cd_tse = CAST(d.CD_MUNICIPIO AS BIGINT)
-        where CAST(CD_CARGO AS INT) = {CARGO_DEP_FEDERAL} and NR_TURNO = '1'
+        where CAST(CD_CARGO AS INT) IN ({cargos}) and NR_TURNO = '1'
         group by m.cd_ibge
     """).df()
     f.unlink()
@@ -94,7 +95,7 @@ def processar_uf(con, ano: int, uf: str, mun: pd.DataFrame) -> dict[str, pd.Data
                SUM(CAST(QT_VOTOS_NOMINAIS_VALIDOS AS BIGINT)) nominais,
                SUM(CAST(QT_TOTAL_VOTOS_LEG_VALIDOS AS BIGINT)) legenda
         from {ler(con, f)} p join mun m on m.cd_tse = CAST(p.CD_MUNICIPIO AS BIGINT)
-        where CAST(CD_CARGO AS INT) = {CARGO_DEP_FEDERAL} and NR_TURNO = '1'
+        where CAST(CD_CARGO AS INT) IN ({cargos}) and NR_TURNO = '1'
         group by p.SG_PARTIDO, m.cd_ibge
     """).df()
     f.unlink()
@@ -113,7 +114,7 @@ def main() -> None:
     con = duckdb.connect()
     partes: dict[str, list[pd.DataFrame]] = {"votos": [], "cand": [], "validos": [], "partido": []}
     for uf in ufs:
-        r = processar_uf(con, a.ano, uf, mun)
+        r = processar_uf(con, a.ano, uf, mun, ','.join(map(str, CARGOS[a.cargo])))
         for k, v in r.items():
             partes[k].append(v)
         print(f"  {uf}: {len(r['cand'])} candidatos, {len(r['votos'])} linhas cand×mun, "
@@ -126,8 +127,8 @@ def main() -> None:
         cand[col] = cand[col].fillna(0).astype("int64")
     for k, nome in [("votos", "votos_cand_mun"), ("validos", "validos_mun"), ("partido", "partido_mun")]:
         df = pd.concat(partes[k], ignore_index=True)
-        _salvar(df, nome, a.ano, ufs)
-    _salvar(cand, "candidatos", a.ano, ufs)
+        _salvar(df, nome + sufixo(a.cargo), a.ano, ufs)
+    _salvar(cand, "candidatos" + sufixo(a.cargo), a.ano, ufs)
 
     # Checagens de consistência
     v = pd.concat(partes["votos"]); val = pd.concat(partes["validos"])
@@ -139,7 +140,8 @@ def main() -> None:
 
 def _salvar(df: pd.DataFrame, nome: str, ano: int, ufs: list[str]) -> None:
     """Mescla com o arquivo existente substituindo só as UFs processadas agora."""
-    caminho = PROCESSED / f"{nome}_{ano}.parquet"
+    base, _, suf = nome.partition("_estadual")
+    caminho = PROCESSED / f"{base}_{ano}{'_estadual' if _ else ''}.parquet"
     col_uf = "uf" if "uf" in df.columns else None
     if caminho.exists():
         antigo = pd.read_parquet(caminho)

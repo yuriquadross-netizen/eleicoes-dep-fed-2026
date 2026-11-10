@@ -26,6 +26,10 @@ export default function SalvarOffline() {
     try {
       await navigator.storage?.persist?.()
       const lista = await fetch(`./data/${ANO}/arquivos.json`, { cache: 'no-store' }).then((r) => r.json())
+      // os dados são pedidos com ?v=<versão> (dados.ts); salva exatamente esses endereços
+      const meta = await fetch(`./data/${ANO}/meta.json`, { cache: 'no-store' }).then((r) => r.json())
+      const v = encodeURIComponent(meta.gerado_em ?? '')
+      const versionado = (a: string) => a.startsWith('data/') && !/(meta|arquivos)\.json$/.test(a)
       const arquivos: string[] = lista.arquivos
       const dados = await caches.open('base-de-votos-dados')
       const fotos = await caches.open('base-de-votos-fotos')
@@ -34,7 +38,7 @@ export default function SalvarOffline() {
       const fila = [...arquivos]
       const trabalhador = async () => {
         for (let a = fila.shift(); a; a = fila.shift()) {
-          const url = new URL(`./${a}`, location.href).href
+          const url = new URL(`./${a}${versionado(a) ? `?v=${v}` : ''}`, location.href).href
           const resp = await fetch(url, { cache: 'no-cache' })
           if (!resp.ok) throw new Error(`${resp.status} em ${a}`)
           await (a.startsWith('fotos/') ? fotos : dados).put(url, resp)

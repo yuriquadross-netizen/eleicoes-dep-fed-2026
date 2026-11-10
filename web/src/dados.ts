@@ -1,3 +1,4 @@
+import type { Cargo } from './cargo'
 import type { Topology } from 'topojson-specification'
 
 // Camada de dados: tipos dos JSON gerados por pipeline/exportar_web.py e leitura com cache.
@@ -114,6 +115,11 @@ function get<T>(caminho: string): Promise<T> {
 
 export const ANO = 2026
 
+/** Pasta dos JSON de cada cargo (pipeline/comum.py, pasta_web). */
+export function pastaDados(cargo: Cargo): string {
+  return cargo === 'federal' ? String(ANO) : `${ANO}e`
+}
+
 /** Perfis agrupados em arquivos por sq % GRUPOS (mesmo número de pipeline/exportar_web.py). */
 const GRUPOS_CANDIDATO = 256
 export function grupoCandidato(sq: number | string): number {
@@ -125,18 +131,41 @@ function existe<T>(x: T | undefined, oque: string): T {
   return x
 }
 
-export const api = {
-  meta: () => get<Meta>(`data/${ANO}/meta.json`),
+/**
+ * Versão da publicação de cada pasta de dados (o `gerado_em` do meta.json). Os demais arquivos
+ * são pedidos com `?v=<versão>`: assim o cache do uso sem internet nunca mistura código novo com
+ * dado velho (o meta.json é buscado primeiro na rede; ver vite.config.ts).
+ */
+const versoes = new Map<string, Promise<string>>()
+export function versaoDe(base: string): Promise<string> {
+  if (!versoes.has(base)) {
+    const p = get<Meta>(`${base}/meta.json`).then((m) => encodeURIComponent(m.gerado_em ?? ''))
+    p.catch(() => versoes.delete(base))
+    versoes.set(base, p)
+  }
+  return versoes.get(base)!
+}
+const getV = <T,>(base: string, rel: string) => versaoDe(base).then((v) => get<T>(`${base}/${rel}?v=${v}`))
+
+/** Dados do cargo: federal em data/2026/, estadual em data/2026e/. */
+export function apiDe(cargo: Cargo = 'federal') {
+  const base = `data/${pastaDados(cargo)}`
+  return {
+  meta: () => get<Meta>(`${base}/meta.json`),
   busca: () =>
-    get<{ campos: string[]; linhas: LinhaBusca[] }>(`data/${ANO}/busca.json`).then((b) => b.linhas),
+    getV<{ campos: string[]; linhas: LinhaBusca[] }>(base, 'busca.json').then((b) => b.linhas),
   perfil: (sq: number | string) =>
-    get<Record<string, Perfil>>(`data/${ANO}/candidato/${grupoCandidato(sq)}.json`).then((g) => existe(g[String(sq)], 'Candidato')),
-  uf: (uf: string) => get<DadosUF>(`data/${ANO}/uf/${uf}.json`),
+    getV<Record<string, Perfil>>(base, `candidato/${grupoCandidato(sq)}.json`).then((g) => existe(g[String(sq)], 'Candidato')),
+  uf: (uf: string) => getV<DadosUF>(base, `uf/${uf}.json`),
   top: (tipo: Nivel, id: number | string) =>
-    get<Record<string, TopRegiao>>(`data/${ANO}/regiao/${tipo}/${String(id).slice(0, 2)}.json`).then((g) =>
+    getV<Record<string, TopRegiao>>(base, `regiao/${tipo}/${String(id).slice(0, 2)}.json`).then((g) =>
       existe(g[String(id)], 'Região'),
     ),
+  }
 }
+
+/** Atalho histórico: dados dos deputados federais. */
+export const api = apiDe('federal')
 
 export const NOME_TIPO: Record<Nivel, { singular: string; plural: string }> = {
   micro: { singular: 'Microrregião', plural: 'Microrregiões' },

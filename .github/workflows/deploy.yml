@@ -28,6 +28,8 @@ jobs:
       - run: pip install pandas pyarrow
       - name: Exportar JSON (2026, Brasil)
         run: python pipeline/exportar_web.py --ano 2026 --uf BR
+      - name: Exportar JSON dos deputados estaduais (Fase 2; Etapa 8 = só MG, Etapa 9 = BR)
+        run: python pipeline/exportar_web.py --ano 2026 --cargo estadual --uf MG
       - uses: actions/setup-node@v4
         with:
           node-version: 22

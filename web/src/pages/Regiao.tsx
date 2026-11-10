@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
 import BarraIdeo from '../components/BarraIdeo'
 import Foto from '../components/Foto'
 import { baixarCsv, pctCsv } from '../csv'
+import { nomeDoCargo, useCargo } from '../cargo'
+import LinkC, { useNavegarC } from '../components/LinkC'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
 import {
-  api, FILHO, geo, IDX_TIPO, NOME_SIT, NOME_TIPO, NOME_UF, nomeLocal, PAI,
+  apiDe, FILHO, geo, IDX_TIPO, NOME_SIT, NOME_TIPO, NOME_UF, nomeLocal, PAI,
   type DadosUF, type Meta, type Nivel, type TopRegiao,
 } from '../dados'
 import { num, pct, useCarregar, useTitulo } from '../formato'
@@ -14,26 +16,28 @@ import { num, pct, useCarregar, useTitulo } from '../formato'
 const TIPOS_VALIDOS: Nivel[] = ['micro', 'meso', 'rgi', 'rgint', 'mun']
 
 export default function Regiao() {
+  const cargo = useCargo()
   const { tipo = '', id = '' } = useParams()
   const nivel = tipo as Nivel
   const [d, erro] = useCarregar(
     () =>
-      api.top(nivel, id).then(async (r) => {
-        const [u, t, m] = await Promise.all([api.uf(r.uf), geo(r.uf), api.meta()])
+      apiDe(cargo).top(nivel, id).then(async (r) => {
+        const [u, t, m] = await Promise.all([apiDe(cargo).uf(r.uf), geo(r.uf), apiDe(cargo).meta()])
         return { r, u, t, m }
       }),
-    [nivel, id],
+    [nivel, id, cargo],
   )
   const titulo = d ? nomeLocal(d.u, nivel, Number(id)) : ''
   useTitulo(titulo)
   if (!TIPOS_VALIDOS.includes(nivel)) return <p className="aviso">Recorte desconhecido.</p>
-  if (erro) return <p className="aviso">Região não encontrada ({erro}).</p>
+  if (erro) return <p className="aviso">{cargo === 'estadual' ? 'Ainda não há dados de deputados estaduais para esta região.' : `Região não encontrada (${erro}).`}</p>
   if (!d) return <p className="aviso">Carregando…</p>
   return <Conteudo r={d.r} u={d.u} topo={d.t} meta={d.m} />
 }
 
 function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topology; meta: Meta }) {
-  const navegar = useNavigate()
+  const cargo = useCargo()
+  const navegar = useNavegarC()
   const nivel = r.tipo
   const nome = nomeLocal(u, nivel, r.id)
 
@@ -84,7 +88,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
       <p className="trilha">
         {trilha.map((t) => (
           <span key={t.to}>
-            <Link to={t.to}>{t.nome}</Link> ›{' '}
+            <LinkC to={t.to}>{t.nome}</LinkC> ›{' '}
           </span>
         ))}
         {nome}
@@ -97,7 +101,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
       <div className="duas-colunas">
         <div>
           <div className="bloco">
-            <h3>{num(r.validos)} votos válidos para deputado federal</h3>
+            <h3>{num(r.validos)} votos válidos para {nomeDoCargo(cargo, u.uf)}</h3>
             <BarraIdeo ideo={r.ideo} />
           </div>
           <div className="titulo-com-acao">
@@ -132,7 +136,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
                   <td className="com-foto">
                     {t[3] === 'E' ? <Foto sq={t[0]} nome={t[1]} /> : <span className="foto-vazia" />}
                     <span>
-                      <Link to={`/candidato/${t[0]}`}>{t[1]}</Link>
+                      <LinkC to={`/candidato/${t[0]}`}>{t[1]}</LinkC>
                       <small>
                         {t[2]} · <span className={`sit sit-${t[3]}`}>{NOME_SIT[t[3]]}</span>
                       </small>
@@ -170,7 +174,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
                   {filhos.map((f) => (
                     <tr key={f.id}>
                       <td>
-                        <Link to={`/r/${tipoFilho}/${f.id}`}>{f.nome}</Link>
+                        <LinkC to={`/r/${tipoFilho}/${f.id}`}>{f.nome}</LinkC>
                         {f.lider && (
                           <small>
                             1º {f.lider[1]} ({f.lider[2]}) · {pct(f.lider[4])}

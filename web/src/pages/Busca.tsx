@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { api, NOME_SIT, NOME_UF, normalizar, type LinhaBusca } from '../dados'
+import { useSearchParams } from 'react-router-dom'
+import { apiDe, NOME_SIT, NOME_UF, normalizar, type LinhaBusca } from '../dados'
 import { num, useCarregar, useTitulo } from '../formato'
+import { useCargo } from '../cargo'
+import LinkC from '../components/LinkC'
 
 const LIMITE = 200
 
 export default function Busca() {
+  const cargo = useCargo()
   useTitulo('')
-  const [linhas, erro] = useCarregar(() => api.busca(), [])
+  const [linhas, erro] = useCarregar(() => apiDe(cargo).busca(), [cargo])
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const uf = params.get('uf') ?? ''
@@ -98,7 +101,7 @@ export default function Busca() {
               {resultado.slice(0, LIMITE).map((l: LinhaBusca) => (
                 <tr key={l[0]}>
                   <td>
-                    <Link to={`/candidato/${l[0]}`}>{l[1]}</Link>
+                    <LinkC to={`/candidato/${l[0]}`}>{l[1]}</LinkC>
                     <small>{l[2]}</small>
                   </td>
                   <td>{l[3]}</td>

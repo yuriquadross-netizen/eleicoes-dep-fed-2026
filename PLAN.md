@@ -19,7 +19,7 @@
 
 **Fase 3 (planejada): home do cenário nacional e Senado.** Página inicial sobre o Congresso **eleito para 2027** (hemiciclos da Câmara e do Senado na cor dos campos, aritmética de votações, renovação, mapa do Brasil, maiores votações e puxadores, governadores 2026, bancadas e variação desde 2022) e a mesma análise dos deputados para os **senadores eleitos em 2022 e 2026**, com os **suplentes em exercício** vindos da API de dados abertos do Senado. Etapas 12–15.
 
-**Ordem de execução recomendada:** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. **Próximo passo: 12.1.**
+**Ordem de execução recomendada:** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. **Etapa 12 pronta** (home com o hemiciclo da Câmara; publicação no PR). **Próximo passo: 8.0.**
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -263,9 +263,9 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 12 — Home com o hemiciclo da Câmara · *Visível: ao abrir o app, a home mostra as 513 cadeiras da Câmara eleita para 2027, coloridas por campo, com as bancadas.*
 
-- [ ] **12.1 Rotas:** a home passa a ser `#/`, e a busca vai para `#/buscar`. Links antigos (`#/?q=…`, `#/?partido=…`) redirecionam para `#/buscar?…`. **Onde:** `web/src/main.tsx`, `web/src/pages/Home.tsx` (novo), `Busca.tsx`. **Verificar:** smoke test de todas as rotas; um link antigo de busca abre a busca com o filtro. **Cerca:** sem análises ainda.
-- [ ] **12.2 Componente `Hemiciclo`:** SVG de assentos em arcos (algoritmo padrão de "parliament diagram": fileiras concêntricas, assentos distribuídos proporcionalmente ao comprimento de cada fileira), partidos agrupados da Esquerda (à esquerda) ao Centro e à Direita, cor do campo (verde/amarelo/vermelho), separação fina entre partidos, tooltip com partido, campo e cadeiras, legenda com a contagem de cada campo. **Onde:** `web/src/components/Hemiciclo.tsx`. **Verificar:** 513 assentos desenhados e soma por campo igual à de `meta.json`; captura conferida. **Cerca:** um só componente, reaproveitado no Senado; nada de cor por partido (D18).
-- [ ] **12.3 Bancadas 2027:** tabela de partidos da Câmara (cadeiras, campo, federação) ao lado do hemiciclo. **Verificar:** soma 513. **Cerca:** a variação desde 2022 fica para a Etapa 15.
+- [x] **12.1 Rotas:** a home passa a ser `#/`, e a busca vai para `#/buscar`. Links antigos (`#/?q=…`, `#/?partido=…`) redirecionam para `#/buscar?…`. **Onde:** `web/src/main.tsx`, `web/src/pages/Home.tsx` (novo), `Busca.tsx`. **Verificar:** smoke test de todas as rotas; um link antigo de busca abre a busca com o filtro. **Cerca:** sem análises ainda.
+- [x] **12.2 Componente `Hemiciclo`:** SVG de assentos em arcos (algoritmo padrão de "parliament diagram": fileiras concêntricas, assentos distribuídos proporcionalmente ao comprimento de cada fileira), partidos agrupados da Esquerda (à esquerda) ao Centro e à Direita, cor do campo (verde/amarelo/vermelho), separação fina entre partidos, tooltip com partido, campo e cadeiras, legenda com a contagem de cada campo. **Onde:** `web/src/components/Hemiciclo.tsx`. **Verificar:** 513 assentos desenhados e soma por campo igual à de `meta.json`; captura conferida. **Cerca:** um só componente, reaproveitado no Senado; nada de cor por partido (D18).
+- [x] **12.3 Bancadas 2027** (feito em três colunas, Esquerda/Centro/Direita, na ordem do hemiciclo; o total de cada coluna conta os deputados pelo próprio campo): tabela de partidos da Câmara (cadeiras, campo, federação) ao lado do hemiciclo. **Verificar:** soma 513. **Cerca:** a variação desde 2022 fica para a Etapa 15.
 - [ ] **12.4 Publicar.**
 
 ### Etapa 13 — Dados do Senado e composição 2027 · *Visível: a home ganha o hemiciclo do Senado (81 cadeiras), com os suplentes em exercício marcados.*

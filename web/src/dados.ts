@@ -78,6 +78,8 @@ export interface Meta {
   ufs: string[]
   regioes: Record<string, { nome: string; ufs: string[] }>
   ufs_info: Record<string, { eleitos: number; validos: number; ideo: Ideo }>
+  /** Câmara eleita: [sq, urna, partido, uf, campo, federação] */
+  camara?: [number, string, string, string, Classe | null, string | null][]
   /** [sq, urna, partido, uf, campo marcado, campo do partido, observação] */
   posicoes_proprias?: [number, string, string, string, string, string, string][]
   classes: string[]

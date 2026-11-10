@@ -198,3 +198,45 @@ input[type='search']:focus, select:focus { outline: 2px solid var(--link); outli
 .campo i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; }
 .campo .nota { color: var(--tinta-3); }
 .campo .propria { color: var(--tinta-2); font-style: italic; }
+
+/* edição do posicionamento */
+.edicao { margin: -0.5rem 0 1.25rem; }
+.edicao-form { background: var(--superficie); border: 1px solid var(--linha); border-radius: 8px; padding: 0.8rem 0.9rem; display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; max-width: 760px; }
+.edicao-form label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--tinta-2); }
+.edicao-form input[type='text'] { font: inherit; border: 1px solid var(--linha-forte); border-radius: 6px; padding: 0.45rem 0.6rem; min-width: 280px; }
+.edicao-acoes { display: flex; gap: 0.5rem; }
+.edicao-dica { font-size: 0.8rem; color: var(--tinta-3); margin: 0.25rem 0 0; flex-basis: 100%; }
+.edicao-erro { color: var(--esquerda); font-size: 0.85rem; }
+.edicao-ok { color: var(--direita); font-size: 0.85rem; }
+.edicao-andamento { font-size: 0.85rem; color: var(--tinta-2); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.edicao-andamento.publicado { color: var(--direita); }
+.edicao-andamento.falhou { color: var(--esquerda); }
+.botao.primario { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+.botao.primario:hover { color: var(--papel); }
+.passos { margin: 0 0 0.75rem; padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.7; }
+.passos code, .pagina-edicao code { font-size: 0.82rem; background: var(--hover); padding: 0.05rem 0.3rem; border-radius: 3px; }
+.filtros input[type='password'] { font: inherit; flex: 1 1 280px; border: 1px solid var(--linha-forte); border-radius: 6px; padding: 0.5rem 0.7rem; }
+
+/* tipologia da base */
+.tipologia .tipo-nome { font: 600 1.2rem/1.2 var(--serif); margin: 0 0 0.2rem; }
+.tipologia .tipo-desc { margin: 0 0 0.8rem; color: var(--tinta-2); font-size: 0.9rem; }
+.tipologia .tipo-notas { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--tinta-3); }
+.medidores { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem 2rem; }
+.medidor-topo { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--tinta-2); }
+.medidor-topo b { color: var(--tinta); font-variant-numeric: tabular-nums; }
+.medidor-trilho { position: relative; height: 8px; border-radius: 4px; background: var(--linha); margin: 0.35rem 0 0.25rem; }
+.medidor-mediana { position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; background: var(--tinta-3); }
+.medidor-ponto { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--tinta); box-shadow: 0 0 0 2px var(--superficie); }
+.medidor-nota { font-size: 0.75rem; color: var(--tinta-3); }
+.dispersao .grade { stroke: var(--linha); stroke-width: 1; }
+.dispersao .eixo { font-size: 10px; fill: var(--tinta-3); font-variant-numeric: tabular-nums; }
+.dispersao .eixo-titulo { font-size: 11px; fill: var(--tinta-2); }
+.dispersao .mediana { stroke: var(--tinta-3); stroke-width: 1; stroke-dasharray: 4 3; }
+.dispersao .quadrante { font-size: 10.5px; fill: var(--tinta-3); text-transform: uppercase; letter-spacing: 0.04em; paint-order: stroke; stroke: var(--superficie); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.dispersao .ponto { stroke: var(--superficie); stroke-width: 2; cursor: pointer; }
+.dispersao .ponto:hover { stroke: var(--tinta); }
+.grade-tipos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.grade-tipos .nomes { font-size: 0.85rem; line-height: 1.7; margin: 0.4rem 0 0; }
+.grade-tipos .nomes small { color: var(--tinta-3); }
+.texto { max-width: 760px; }
+.texto p, .texto li { line-height: 1.65; }

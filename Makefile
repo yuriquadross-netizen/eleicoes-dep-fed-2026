@@ -13,6 +13,7 @@ dados:            ## baixa TSE + geobr e gera data/processed/
 	$(PY) pipeline/baixar.py --ano $(ANO)
 	$(PY) pipeline/municipios.py
 	$(PY) pipeline/tabelas.py --ano $(ANO) --uf $(UF)
+	$(PY) pipeline/tipologia.py --ano $(ANO) --uf $(UF)
 
 web:              ## gera os JSON e faz o build do app
 	$(PY) pipeline/exportar_web.py --ano $(ANO) --uf $(UF)

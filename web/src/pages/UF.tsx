@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
 import BarraIdeo from '../components/BarraIdeo'
+import DispersaoTipologia from '../components/DispersaoTipologia'
 import Foto from '../components/Foto'
 import { baixarCsv, pctCsv } from '../csv'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
-import { api, geo, NOME_TIPO, NOME_UF, type DadosUF, type Meta, type Tipo } from '../dados'
+import { api, geo, NOME_TIPO, NOME_UF, TIPO_BASE, type DadosUF, type Meta, type Tipo, type TipoBase } from '../dados'
 import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
 
@@ -181,6 +182,8 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
         legenda={metrica === -1 ? <LegendaPredominante /> : undefined}
       />
 
+      {u.tipologia && <SecaoTipologia u={u} />}
+
       <div className="duas-colunas">
         <div>
           <div className="titulo-com-acao">
@@ -268,5 +271,45 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
         </div>
       </div>
     </article>
+  )
+}
+
+function SecaoTipologia({ u }: { u: DadosUF }) {
+  const tip = u.tipologia!
+  const grupos = (Object.keys(TIPO_BASE) as TipoBase[]).map((t) => ({
+    t,
+    lista: tip.eleitos.filter((e) => e[6] === t).sort((a, b) => a[1].localeCompare(b[1])),
+  }))
+  return (
+    <section>
+      <div className="titulo-com-acao">
+        <h2>Tipo de base dos eleitos</h2>
+        <Link to="/metodo" className="legenda-tab">
+          como é calculado
+        </Link>
+      </div>
+      {tip.confiabilidade === 'baixa' && (
+        <p className="legenda-tab">{NOME_UF[u.uf]} tem poucos municípios: leia a tipologia com cautela.</p>
+      )}
+      <DispersaoTipologia tip={tip} />
+      <div className="grade-tipos">
+        {grupos.map(({ t, lista }) => (
+          <div key={t} className="bloco">
+            <h3>
+              {TIPO_BASE[t].nome} · {lista.length}
+            </h3>
+            <p className="legenda-tab">{TIPO_BASE[t].descricao}</p>
+            <p className="nomes">
+              {lista.map((e, i) => (
+                <span key={e[0]}>
+                  <Link to={`/candidato/${e[0]}`}>{e[1]}</Link> <small>{e[2]}</small>
+                  {i < lista.length - 1 ? ' · ' : ''}
+                </span>
+              ))}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }

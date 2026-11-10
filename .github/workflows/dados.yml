@@ -26,6 +26,7 @@ jobs:
       - run: python pipeline/baixar.py --ano ${{ inputs.ano }}
       - run: python pipeline/municipios.py
       - run: python pipeline/tabelas.py --ano ${{ inputs.ano }} --uf BR
+      - run: python pipeline/tipologia.py --ano ${{ inputs.ano }} --uf BR
       - run: python pipeline/baixar.py --ano 2022 && python pipeline/tabelas.py --ano 2022 --uf MG && python -m pytest pipeline/tests -q
       - name: Commit
         run: |

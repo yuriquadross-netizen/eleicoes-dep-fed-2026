@@ -284,6 +284,13 @@ def main() -> None:
         "ano": a.ano, "gerado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "ufs": disponiveis, "regioes": {k: {"nome": n, "ufs": u} for k, (n, u) in REGIOES.items()},
         "ufs_info": ufs_info, "classes": CLASSES,
+        # Câmara eleita: [sq, urna, partido, uf, campo (próprio ou do partido), federação]
+        "camara": [
+            [int(c.sq_candidato), c.nome_urna, c.partido, c.uf,
+             propria_classe.get(c.sq_candidato, classe_partido.get(c.partido)),
+             c.federacao if isinstance(c.federacao, str) else None]
+            for c in cand[cand.situacao == "Eleito"].sort_values(["partido", "uf", "nome_urna"]).itertuples()
+        ],
         # [sq, urna, partido, uf, campo marcado, campo do partido, observação]
         "posicoes_proprias": [
             [int(r.sq_candidato), info_cand.at[r.sq_candidato, "nome_urna"], info_cand.at[r.sq_candidato, "partido"],

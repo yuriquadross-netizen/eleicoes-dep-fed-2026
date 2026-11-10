@@ -77,7 +77,7 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
   return (
     <article>
       <p className="trilha">
-        <Link to="/">Buscar</Link> › <Link to={`/uf/${p.uf}`}>{NOME_UF[p.uf]}</Link> › {p.urna}
+        <Link to="/buscar">Buscar</Link> › <Link to={`/uf/${p.uf}`}>{NOME_UF[p.uf]}</Link> › {p.urna}
       </p>
       <header className="perfil-cab">
         <div>
@@ -85,7 +85,7 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
           <div>
             <h1>{p.urna}</h1>
             <p className="sub">
-              {p.nome} · <Link to={`/?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
+              {p.nome} · <Link to={`/buscar?partido=${encodeURIComponent(p.partido)}&uf=${p.uf}&todos=1`}>{p.partido}</Link>
               {p.federacao ? ` (${p.federacao})` : ''} · nº {p.nr} · {NOME_UF[p.uf]}
             </p>
             {p.classe && (

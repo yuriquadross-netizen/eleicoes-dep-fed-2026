@@ -7,6 +7,7 @@ import SalvarOffline from './components/SalvarOffline'
 import Busca from './pages/Busca'
 import Candidato from './pages/Candidato'
 import Edicao from './pages/Edicao'
+import Home from './pages/Home'
 import Metodo from './pages/Metodo'
 import Regiao from './pages/Regiao'
 import UF from './pages/UF'
@@ -16,16 +17,18 @@ function App() {
     <HashRouter>
       <header className="topo">
         <Link to="/" className="marca">
-          Base de Votos <span>Deputados Federais · 2026</span>
+          Base de Votos <span>Congresso · 2026</span>
         </Link>
         <nav>
-          <Link to="/">Buscar</Link>
+          <Link to="/">Início</Link>
+          <Link to="/buscar">Buscar</Link>
           <Link to="/brasil">Estados e regiões</Link>
         </nav>
       </header>
       <main>
         <Routes>
-          <Route path="/" element={<Busca />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/buscar" element={<Busca />} />
           <Route path="/candidato/:sq" element={<Candidato />} />
           <Route path="/brasil" element={<Brasil />} />
           <Route path="/uf/:uf" element={<UF />} />

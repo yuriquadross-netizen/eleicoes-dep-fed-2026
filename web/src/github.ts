@@ -1,14 +1,15 @@
 // Edição do posicionamento ideológico direto pelo app.
 // Grava config/candidatos_ideologia.csv no repositório via API do GitHub, com a chave de acesso
 // (token) do dono, guardada só neste navegador. O commit em `main` dispara a republicação do site.
-import { ANO, type Classe, type Perfil } from './dados'
+import type { Cargo } from './cargo'
+import { ANO, pastaDados, type Classe, type Perfil } from './dados'
 
 export const REPO = 'yuriquadross-netizen/eleicoes-dep-fed-2026'
 const ARQUIVO = 'config/candidatos_ideologia.csv'
 const RAMO = 'main'
 const API = 'https://api.github.com'
 const CHAVE_TOKEN = 'base-de-votos:github-token'
-const CABECALHO = ['ano', 'sq_candidato', 'nome_urna', 'uf', 'partido', 'classe', 'observacao']
+const CABECALHO = ['ano', 'sq_candidato', 'nome_urna', 'uf', 'partido', 'classe', 'observacao', 'cargo']
 
 // ---------- chave de acesso ----------
 export function lerToken(): string | null {
@@ -115,13 +116,18 @@ export async function gravarPosicao(
   p: Perfil,
   classe: Classe | null,
   observacao: string,
+  cargo: Cargo = 'federal',
 ): Promise<{ commit: string; quando: string }> {
   for (let tentativa = 1; ; tentativa++) {
     const atual = await api(`/repos/${REPO}/contents/${ARQUIVO}?ref=${RAMO}`, token)
     const linhas = lerCsv(deBase64(atual.content))
-    const corpo = linhas.slice(1).filter((l) => !(l[0] === String(ANO) && l[1] === String(p.sq)))
+    const corpo = linhas
+      .slice(1)
+      .map((l) => (l.length < CABECALHO.length ? [...l, ...Array(CABECALHO.length - l.length).fill('')] : l))
+      .map((l) => (l[7] ? l : [...l.slice(0, 7), 'federal'])) // linha sem cargo = federal
+      .filter((l) => !(l[0] === String(ANO) && l[1] === String(p.sq)))
     if (classe) {
-      corpo.push([String(ANO), String(p.sq), p.urna, p.uf, p.partido, classe, observacao.trim()])
+      corpo.push([String(ANO), String(p.sq), p.urna, p.uf, p.partido, classe, observacao.trim(), cargo])
     }
     const texto = escreverCsv([CABECALHO, ...corpo])
     const mensagem = classe
@@ -157,22 +163,11 @@ export async function estadoPublicacao(commit: string): Promise<EstadoPublicacao
 }
 
 /**
- * Depois de publicado, rebaixa só os arquivos afetados para o cache do uso sem internet
- * (sem apagar o resto do que foi salvo), para a página recarregada já vir atualizada.
+ * Depois de publicado, atualiza o meta.json no cache. Os demais arquivos têm a versão no endereço
+ * (dados.ts), então a página recarregada já pede os novos; o resto do que foi salvo continua lá.
  */
-export async function atualizarArquivosDe(p: Perfil, grupoCandidato: number, codUf: string) {
-  const arquivos = [
-    `data/${ANO}/meta.json`,
-    `data/${ANO}/uf/${p.uf}.json`,
-    `data/${ANO}/candidato/${grupoCandidato}.json`,
-    ...['micro', 'meso', 'rgi', 'rgint', 'mun'].map((t) => `data/${ANO}/regiao/${t}/${codUf}.json`),
-  ]
-  const cache = typeof caches !== 'undefined' ? await caches.open('base-de-votos-dados') : null
-  await Promise.all(
-    arquivos.map(async (a) => {
-      const url = new URL(`./${a}`, location.href).href
-      const r = await fetch(url, { cache: 'reload' })
-      if (r.ok && cache) await cache.put(url, r)
-    }),
-  )
+export async function atualizarArquivosDe(cargo: Cargo) {
+  const url = new URL(`./data/${pastaDados(cargo)}/meta.json`, location.href).href
+  const r = await fetch(url, { cache: 'reload' })
+  if (r.ok && typeof caches !== 'undefined') await (await caches.open('base-de-votos-dados')).put(url, r)
 }

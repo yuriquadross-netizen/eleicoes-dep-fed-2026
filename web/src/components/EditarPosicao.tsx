@@ -1,13 +1,15 @@
 // Editor do posicionamento ideológico de um parlamentar (só aparece para quem configurou a chave em #/edicao).
 import { useEffect, useState } from 'react'
-import { grupoCandidato, type Classe, type Perfil } from '../dados'
+import { useCargo } from '../cargo'
+import { type Classe, type Perfil } from '../dados'
 import {
   atualizarArquivosDe, estadoPublicacao, gravarPosicao, lerToken, type EstadoPublicacao,
 } from '../github'
 
 const OPCOES: (Classe | '')[] = ['', 'Direita', 'Centro', 'Esquerda']
 
-export default function EditarPosicao({ p, codUf }: { p: Perfil; codUf: string }) {
+export default function EditarPosicao({ p }: { p: Perfil }) {
+  const cargo = useCargo()
   const token = lerToken()
   const marcado = typeof p.posicao_propria === 'string'
   const [aberto, setAberto] = useState(false)
@@ -29,7 +31,7 @@ export default function EditarPosicao({ p, codUf }: { p: Perfil; codUf: string }
       if (!vivo) return
       setEstado(e)
       if (e === 'publicado') {
-        await atualizarArquivosDe(p, grupoCandidato(p.sq), codUf).catch(() => undefined)
+        await atualizarArquivosDe(cargo).catch(() => undefined)
         return
       }
       if (e === 'falhou' || e === 'substituida' || ++n > 60) return
@@ -39,7 +41,7 @@ export default function EditarPosicao({ p, codUf }: { p: Perfil; codUf: string }
     return () => {
       vivo = false
     }
-  }, [commit, p, codUf])
+  }, [commit, cargo])
 
   // visitantes (sem chave) não veem nada; a edição se ativa pelo link "Edição" do rodapé
   if (!token) return null
@@ -48,7 +50,7 @@ export default function EditarPosicao({ p, codUf }: { p: Perfil; codUf: string }
     setSalvando(true)
     setErro(null)
     try {
-      const r = await gravarPosicao(token, p, classe || null, obs)
+      const r = await gravarPosicao(token, p, classe || null, obs, cargo)
       setCommit(r.commit)
       setEstado('aguardando')
       setAberto(false)

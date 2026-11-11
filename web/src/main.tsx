@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter, Link, Route, Routes } from 'react-router-dom'
 import './estilo.css'
 import Brasil from './pages/Brasil'
+import Cabecalho from './components/Cabecalho'
 import SalvarOffline from './components/SalvarOffline'
 import Busca from './pages/Busca'
 import Candidato from './pages/Candidato'
@@ -15,16 +16,7 @@ import UF from './pages/UF'
 function App() {
   return (
     <HashRouter>
-      <header className="topo">
-        <Link to="/" className="marca">
-          Base de Votos <span>Congresso · 2026</span>
-        </Link>
-        <nav>
-          <Link to="/">Início</Link>
-          <Link to="/buscar">Buscar</Link>
-          <Link to="/brasil">Estados e regiões</Link>
-        </nav>
-      </header>
+      <Cabecalho />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -35,6 +27,15 @@ function App() {
           <Route path="/r/:tipo/:id" element={<Regiao />} />
           <Route path="/edicao" element={<Edicao />} />
           <Route path="/metodo" element={<Metodo />} />
+          {/* deputados estaduais: mesmas páginas, prefixo /estadual (cargo lido do endereço) */}
+          <Route path="/estadual" element={<Busca />} />
+          <Route path="/estadual/buscar" element={<Busca />} />
+          <Route path="/estadual/candidato/:sq" element={<Candidato />} />
+          <Route path="/estadual/brasil" element={<Brasil />} />
+          <Route path="/estadual/uf/:uf" element={<UF />} />
+          <Route path="/estadual/r/:tipo/:id" element={<Regiao />} />
+          <Route path="/estadual/metodo" element={<Metodo />} />
+          <Route path="/estadual/edicao" element={<Edicao />} />
           <Route path="*" element={<p className="aviso">Página não encontrada.</p>} />
         </Routes>
       </main>

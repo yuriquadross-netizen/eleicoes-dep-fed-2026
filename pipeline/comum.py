@@ -31,6 +31,18 @@ CROSSWALK_URL = (
 )
 
 CARGO_DEP_FEDERAL = 6
+# Fase 2: cargo como parâmetro. Federal mantém os nomes de arquivo atuais (sufixo vazio).
+CARGOS = {"federal": [6], "estadual": [7, 8]}  # 8 = Deputado Distrital (DF)
+
+
+def sufixo(cargo: str) -> str:
+    """Sufixo dos arquivos em data/processed/: "" para federal, "_estadual" para estadual."""
+    return "" if cargo == "federal" else f"_{cargo}"
+
+
+def pasta_web(ano: int, cargo: str) -> str:
+    """Pasta dos JSON em web/public/data/: "2026" (federal) ou "2026e" (estadual)."""
+    return str(ano) if cargo == "federal" else f"{ano}e"
 
 UFS = [
     "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
@@ -58,6 +70,7 @@ def args_padrao(descricao: str) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=descricao)
     p.add_argument("--ano", type=int, default=2026, choices=[2022, 2026])
     p.add_argument("--uf", default="BR", help="Sigla da UF ou BR para todas")
+    p.add_argument("--cargo", default="federal", choices=list(CARGOS))
     return p.parse_args()
 
 

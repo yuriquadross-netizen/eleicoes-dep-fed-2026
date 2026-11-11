@@ -19,7 +19,9 @@
 
 **Fase 3 (planejada): home do cenário nacional e Senado.** Página inicial sobre o Congresso **eleito para 2027** (hemiciclos da Câmara e do Senado na cor dos campos, aritmética de votações, renovação, mapa do Brasil, maiores votações e puxadores, governadores 2026, bancadas e variação desde 2022) e a mesma análise dos deputados para os **senadores eleitos em 2022 e 2026**, com os **suplentes em exercício** vindos da API de dados abertos do Senado. Etapas 12–15.
 
-**Ordem de execução recomendada:** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. **Etapa 12 pronta** (home com o hemiciclo da Câmara; publicação no PR). **Próximo passo: 8.0.**
+**Fase 4 (planejada, por último): refino da interface pelos princípios de design da Apple** (skill `apple-design`): tipografia, materiais translúcidos, resposta imediata, movimento com molas interrompíveis, gestos nos mapas, navegação e acessibilidade. Etapa 16.
+
+**Ordem de execução:** 12 ✅ → 8 ✅ (aguardando merge do PR #7) → 13 → 14 → 15 → 9 → 10 → 11 → 16. **Regra de trabalho (Yuri, 10/11): avançar etapa a etapa, pedindo a autorização dele antes de começar cada uma.** **Próximo passo: 13.1, depois da autorização.**
 
 **Rede:** o TSE está liberado no ambiente da nuvem. O IBGE recusa conexões fora do Brasil, por isso as malhas e os recortes vêm do geobr (Ipea), hospedado no GitHub. Ver `docs/dados.md`.
 
@@ -49,6 +51,9 @@
 | D18 | **Hemiciclo colorido por campo** (verde/amarelo/vermelho), partidos agrupados da Esquerda (à esquerda) à Direita, com tooltip por partido | Três cores legíveis e coerentes com o resto do app; a identidade do partido fica no tooltip e na tabela ao lado | Uma cor por partido (cerca de 20 cores, ilegível e conflitante com os campos) |
 | D19 | **Variação de bancadas via tabela de sucessão de partidos** (`config/partidos_sucessao.csv`) | Fusões entre 2022 e 2026 (PRD, Mobiliza, Democrata, Agir etc.) tornariam a comparação por sigla enganosa | Comparar siglas cruas |
 | D20 | **Suplentes em exercício vêm da API do Senado** (decisão do Yuri), gravados como retrato versionado (`data/processed/senado_exercicio.parquet`) e atualizados pelo pipeline; reserva: lista mantida à mão editável pelo app | Fonte oficial, sem trabalho manual; o retrato versionado mantém o site funcionando mesmo se a API cair | Consulta ao vivo pelo navegador (dependência externa a cada acesso) |
+| D21 | **Refino da interface pelos princípios da Apple como etapa final (16)**, aplicado de uma vez a todas as páginas | Pedido do Yuri (10/11). Fazer antes obrigaria a refazer a cada página nova | Refinar página a página durante a construção |
+| D22 | **Na Fase 4, o app continua só claro e as cores dos campos não mudam** | Decisões anteriores do Yuri (03/11) prevalecem sobre o princípio geral de adaptar a claro/escuro | Reintroduzir o modo escuro |
+| D23 | **Movimento com a biblioteca `motion`, mola criticamente amortecida por padrão**; salto só em gestos com impulso; `prefers-reduced-motion` vira cross-fade | Molas partem do valor atual e aceitam interrupção, o que transições CSS não fazem; é o padrão da skill | Só transições CSS (não interrompíveis); biblioteca de gestos pesada |
 
 **Decisão em aberto para o Yuri:** o repositório é **público** e, portanto, o site no Pages também é. Os dados do TSE são públicos, mas a tabela de ideologia é julgamento da Aliança. Para restringir o acesso, seria preciso tornar o repo privado e usar GitHub Pro (US$ 4/mês) ou outro host. O padrão até nova ordem é site público, sem marca, com URL não divulgada.
 
@@ -203,25 +208,25 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ### Etapa 8 — Esqueleto estadual (MG) · *Visível: no app, o Yuri troca para "Estadual", busca um deputado estadual de MG e vê perfil, mapa e tabela de micros.*
 
-- [ ] **8.0 Teste de não-regressão dos federais**
+- [x] **8.0 Teste de não-regressão dos federais**
   - **Objetivo:** guardar um "retrato" dos federais e comparar depois de cada mudança.
   - **Onde:** `pipeline/retrato_federal.py` (grava hashes dos parquet federais e de 20 JSON de amostra — 5 perfis, 5 UFs, 10 regiões — em `pipeline/tests/fixtures/retrato_federal.json`) e `pipeline/tests/test_regressao_federal.py` (recalcula e compara).
   - **Verificar:** gerar o retrato, rodar o teste duas vezes sem mudança → passa; alterar um número num JSON exportado → falha.
   - **Cerca:** só leitura; não altera pipeline nem app.
 
-- [ ] **8.1 `tabelas.py --cargo`**
+- [x] **8.1 `tabelas.py --cargo`** (MG: 943 candidatos, 77 eleitos; válidos = soma nominal + legenda dos partidos; o PCB, que só disputou cargos estaduais, entrou como Esquerda)
   - **Objetivo:** gerar `votos_cand_mun_2026_estadual.parquet`, `validos_mun_2026_estadual.parquet`, `candidatos_2026_estadual.parquet` e `partido_mun_2026_estadual.parquet` com `CD_CARGO in (7, 8)`.
   - **Onde:** `pipeline/tabelas.py`, `pipeline/comum.py` (constante `CARGOS = {"federal": [6], "estadual": [7, 8]}` e função `sufixo(cargo)` que devolve `""` ou `"_estadual"`).
   - **Verificar:** `python pipeline/tabelas.py --ano 2026 --cargo estadual --uf MG` → 943 candidatos e **77 eleitos**; a soma dos válidos estaduais de MG é igual ao total de `QT_TOTAL_VOTOS_VALIDOS` do cargo 7 no `detalhe_votacao_munzona` de MG; o teste 8.0 passa (federais intactos).
   - **Cerca:** não mudar nomes de arquivo federais.
 
-- [ ] **8.2 `exportar_web.py --cargo`**
+- [x] **8.2 `exportar_web.py --cargo`**
   - **Objetivo:** exportar o estadual para `web/public/data/2026e/`, no mesmo formato do federal. `posicoes_proprias` filtra o CSV pela coluna `cargo` (linha sem `cargo` = federal).
   - **Onde:** `pipeline/exportar_web.py`, `config/candidatos_ideologia.csv` (acrescentar a coluna `cargo`).
   - **Verificar:** `meta.json` de `2026e` com MG; perfil de um eleito estadual com micros e `% da base` somando 1,0; teste 8.0 passa.
   - **Cerca:** tipologia e fotos ficam para a Etapa 10.
 
-- [ ] **8.3 App: contexto de cargo, rotas e seletor**
+- [x] **8.3 App: contexto de cargo, rotas e seletor** (também: dados com `?v=<versão>` no endereço e `meta.json` buscado primeiro na rede, para o cache offline nunca misturar código novo com dado velho; ver o incidente de 10/11 em docs/decisoes.md)
   - **Objetivo:** `CargoContext` derivado do prefixo da rota (`#/estadual/...`); `api.*` lê de `data/2026/` ou `data/2026e/`; links gerados por um helper `rota(cargo, caminho)`; seletor no cabeçalho; título "Deputados Estaduais · 2026" (no DF, "Distritais").
   - **Onde:** `web/src/cargo.ts` (novo), `web/src/dados.ts`, `web/src/main.tsx`, páginas existentes.
   - **Verificar:** script Playwright com todas as rotas federais do smoke test atual, mais `#/estadual/` e `#/estadual/candidato/<sq de MG>`; zero erros; capturas conferidas.
@@ -259,7 +264,7 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 > Pedido do Yuri (10/11/2026): uma página inicial com a leitura geral do Congresso que toma posse em 2027 (hemiciclos da Câmara e do Senado na cor dos campos, aritmética de votações, renovação, mapa do Brasil, maiores votações e puxadores, governadores 2026, bancadas e variação) e a mesma análise dos deputados para os senadores eleitos em 2022 e em 2026, indicando os suplentes que assumiram no lugar de titulares que saíram.
 >
-> **Ordem de execução recomendada (Fases 2 e 3 juntas):** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11. A Etapa 12 é uma vitória rápida que só usa dados já prontos. A Etapa 8 cria a infraestrutura de cargo (seletor e rotas), que o Senado reaproveita na Etapa 14.
+> **Ordem de execução recomendada (Fases 2 e 3 juntas; a Fase 4, Etapa 16, vem depois de todas):** 12 → 8 → 13 → 14 → 15 → 9 → 10 → 11 → 16. A Etapa 12 é uma vitória rápida que só usa dados já prontos. A Etapa 8 cria a infraestrutura de cargo (seletor e rotas), que o Senado reaproveita na Etapa 14.
 
 ### Etapa 12 — Home com o hemiciclo da Câmara · *Visível: ao abrir o app, a home mostra as 513 cadeiras da Câmara eleita para 2027, coloridas por campo, com as bancadas.*
 
@@ -294,6 +299,65 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 
 ---
 
+## FASE 4 — Refino da interface (princípios de design da Apple)
+
+> Pedido do Yuri (10/11/2026): uma etapa final para adaptar toda a interface seguindo a skill `apple-design` (WWDC: *Designing Fluid Interfaces*, *The Details of UI Typography*, *Principles of Great Design*). **Carregar a skill `anthropic-skills:apple-design` antes de cada passo desta fase** e a `dataviz` antes de mexer em mapas e gráficos.
+>
+> **Por que no fim:** o refino se aplica a todas as páginas de uma vez (federais, estaduais, Senado e home). Fazer antes obrigaria a refazer a cada página nova.
+>
+> **Regras desta fase:** (1) nenhum número, dado ou rota muda: o teste de não-regressão (8.0) e o teste de rotas passam em todos os passos; (2) o app continua **só claro** (decisão do Yuri de 03/11; o princípio "adaptar a claro/escuro" não se aplica aqui); (3) as cores dos campos (verde/amarelo/vermelho) e as escalas dos mapas não mudam; (4) simplicidade não é minimalismo: nada de esconder informação para "limpar" a tela.
+
+### Etapa 16 — Interface com acabamento Apple · *Visível: o app responde ao toque na hora, as transições são contínuas e interrompíveis, o cabeçalho é translúcido e a tipografia segue as regras de tamanho, espaçamento e entrelinha da Apple.*
+
+- [ ] **16.0 Auditoria e retrato "antes"**
+  - **Objetivo:** passar cada página (home, busca, perfil, Brasil, UF, região, método, edição; nos cargos disponíveis) pela lista da skill e registrar o que falha, por seção (§1 resposta, §7 consistência espacial, §12 materiais, §14 acessibilidade, §15 tipografia, §16 fundamentos).
+  - **Onde:** `docs/design-auditoria.md` (tabela página × princípio × problema × passo que resolve) e capturas "antes" em `docs/design/antes/` (computador 1280 px e celular 390 px).
+  - **Verificar:** toda página tem linha na tabela; cada problema aponta para um passo 16.x.
+  - **Cerca:** só diagnóstico; nenhuma mudança de código.
+
+- [ ] **16.1 Tipografia e fundamentos visuais (§15, §16 Craft)**
+  - **Objetivo:** corpo em fonte do sistema (`system-ui`, SF no Mac) e títulos na serifada do sistema (`ui-serif`, New York no Mac), com `font-optical-sizing: auto`; espaçamento entre letras por tamanho (negativo nos títulos grandes, perto de zero no corpo, levemente positivo nos rótulos pequenos em maiúsculas); entrelinha inversa ao tamanho; tudo em `rem`, respeitando o tamanho de texto do usuário; tokens únicos de espaçamento (escala de 4 px), raio e sombra, substituindo valores soltos no CSS.
+  - **Onde:** `web/src/estilo.css` (seção de tokens no topo).
+  - **Verificar:** capturas antes/depois de todas as páginas; com o tamanho de fonte do navegador em 125% e 150%, nenhuma página quebra nem ganha rolagem horizontal; números continuam alinhados (`tabular-nums`).
+  - **Cerca:** sem fontes baixadas da internet. **Confirmar com o Yuri** a troca da serifada atual pela New York antes de aplicar (é a identidade visual dos títulos).
+
+- [ ] **16.2 Materiais e profundidade (§12)**
+  - **Objetivo:** cabeçalho como camada translúcida (`backdrop-filter: blur() saturate()`), com o conteúdo rolando por baixo e efeito de borda de rolagem no lugar da linha de 1 px; tooltips dos mapas e do hemiciclo como material (desfoque + sombra proporcional ao tamanho) que "materializa" (escala + opacidade a partir do ponto de origem); hierarquia de superfícies revista (cartões, blocos e tabelas não empilham translúcido sobre translúcido).
+  - **Onde:** `estilo.css`, `Cabecalho.tsx`, `MapaUF.tsx`, `Hemiciclo.tsx`, `DispersaoTipologia.tsx`.
+  - **Verificar:** texto do cabeçalho legível sobre o mapa e sobre as tabelas (contraste ≥ 4,5:1 medido nas capturas); com `prefers-reduced-transparency`, superfícies sólidas; com `prefers-contrast: more`, bordas definidas.
+  - **Cerca:** o desfoque não entra em tabelas nem em cartões de dados.
+
+- [ ] **16.3 Resposta imediata e estados (§1, §10, §16 feedback)**
+  - **Objetivo:** todo elemento clicável reage no toque (pointer-down), não na soltura: botões, abas, seletores, linhas de tabela, cartões de UF, assentos do hemiciclo, regiões do mapa; foco visível para teclado; áreas de toque de pelo menos 44 px no celular; "Carregando…" trocado por esqueletos com a forma do conteúdo; estados vazios e de erro com orientação de saída (wayfinding).
+  - **Onde:** `estilo.css` e os componentes interativos.
+  - **Verificar:** script Playwright que, para cada tipo de controle, verifica mudança visual em `pointerdown` (antes do `pointerup`); navegação completa só com teclado (Tab, Enter, Esc) da home a um perfil; no celular, nenhum alvo interativo com menos de 44 × 44 px.
+  - **Cerca:** sem atrasos artificiais nem animações de espera.
+
+- [ ] **16.4 Movimento com molas, interrompível (§3–§7, §14)**
+  - **Objetivo:** adotar a biblioteca `motion` (versão fixada, publicada há mais de duas semanas) com um estilo da casa: mola criticamente amortecida (`bounce: 0`, duração ~0,35 s) por padrão, sem salto. Aplicar em: indicador deslizante dos seletores segmentados e das abas; expansão e recolhimento das linhas de município (altura a partir do valor atual, interrompível); troca de cor dos mapas ao mudar de métrica; entrada do hemiciclo e destaque de bancada; transição entre páginas com continuidade espacial (entra e sai pelo mesmo caminho). Com `prefers-reduced-motion`, tudo vira cross-fade curto.
+  - **Onde:** `web/package.json`, novo `web/src/movimento.ts` (constantes da mola e helper de redução de movimento), componentes citados.
+  - **Verificar:** clicar duas vezes rápido numa aba ou numa linha (interrupção) não trava nem dá salto visual, conferido em gravação quadro a quadro do Playwright; com movimento reduzido, nenhuma translação; o tamanho do JavaScript cresce menos de 40 KB (gzip).
+  - **Cerca:** nada de animação decorativa, parallax ou confete; nenhum movimento em tabelas de dados durante a leitura; salto (bounce) só onde houver gesto com impulso (16.5).
+
+- [ ] **16.5 Gestos e toque nos mapas e gráficos (§2, §5, §6, §9, §10)**
+  - **Objetivo:** no celular e no trackpad, mapas com pinça e arrasto 1:1 (Pointer Events com captura, respeitando o ponto de pega), inércia projetada ao soltar e elástico nas bordas; toque numa região mostra o tooltip e o segundo toque navega; no hemiciclo, arrastar o dedo percorre os assentos com realce contínuo.
+  - **Onde:** `MapaUF.tsx`, `Hemiciclo.tsx`, `DispersaoTipologia.tsx`, novo `web/src/gestos.ts`.
+  - **Verificar:** teste Playwright com toque simulado (pinça, arrasto, soltura com velocidade): o mapa segue o dedo sem defasagem, continua com a velocidade da soltura e volta elástico ao limite; nenhum clique acidental depois de arrastar (limiar de ~10 px).
+  - **Cerca:** sem bibliotecas de mapa com tiles; o zoom não muda a camada nem os dados.
+
+- [ ] **16.6 Navegação, consistência e simplicidade (§16: familiaridade, wayfinding, flexibilidade, simplicidade)**
+  - **Objetivo:** revisão página a página: cada tela responde "onde estou, para onde posso ir, como volto"; controles iguais se comportam igual e ficam no mesmo lugar em todas as páginas (seletor de cargo, divisão regional, métrica do mapa, baixar CSV); rótulos específicos no lugar de genéricos; no celular, cabeçalho compacto e tabelas largas com a primeira coluna fixa; ações destrutivas ou públicas (salvar posicionamento) com confirmação clara e desfazer.
+  - **Onde:** `Cabecalho.tsx`, páginas, `estilo.css`.
+  - **Verificar:** roteiro de 8 tarefas executado no computador e no celular por script (achar um deputado, ver a micro mais forte, abrir o top 10 de um município, trocar de cargo, baixar um CSV, voltar à home, abrir o método, salvar para uso sem internet), sem beco sem saída.
+  - **Cerca:** nenhuma funcionalidade removida; mudanças de nomenclatura política passam pelo Yuri.
+
+- [ ] **16.7 Revisão final e publicação**
+  - **Objetivo:** rever cada transição em câmera lenta (gravações), comparar antes/depois de todas as páginas, conferir acessibilidade (contraste, teclado, leitores de tela nos mapas e no hemiciclo, as três preferências do sistema) e desempenho (animações só em `transform` e `opacity`).
+  - **Verificar:** `docs/design-auditoria.md` com todos os itens resolvidos ou justificados; testes de não-regressão e de rotas passando; aprovação do Yuri sobre as capturas antes de publicar.
+  - **Cerca:** se um refino conflitar com a leitura dos dados, a leitura dos dados vence.
+
+---
+
 ## 5. Riscos e alarmes
 
 > **Ocorrido em 03/11/2026:** com um arquivo por candidato e por região (~16 mil arquivos), o GitHub Pages passou dos 10 min de limite duas vezes. Correção: perfis agrupados em 256 arquivos (`sq % 256`) e tops em um arquivo por tipo e UF (código IBGE de 2 dígitos), somando ~450 arquivos; o tempo-limite do envio também subiu para 30 min. **Não voltar a gravar um arquivo por item.**
@@ -315,6 +379,10 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 | (Fase 3) Cruzamento de pessoas entre eleições falha (renovação, suplentes, governadores) | Passos 13.3 e 15.2 (contagem de eleitos sem par) | CPF da `consulta_cand`; sem CPF, nome + UF com revisão manual dos casos listados |
 | (Fase 3) Fusões e federações confundem a variação de bancadas | Passo 15.3 | Tabela de sucessão revisada pelo Yuri antes de publicar |
 | (Fase 3) Governadores em 2º turno ausentes do arquivo | Passo 15.6 | Arquivo de 2º turno do TSE (pesquisar o nome do conjunto) |
+| (Fase 4) Refino quebra a leitura dos dados ou alguma rota | Testes de não-regressão e de rotas em cada passo 16.x | Reverter o passo; a leitura dos dados vence a estética |
+| (Fase 4) Desfoque e animações pesam em Macs antigos ou no celular | Passo 16.2 e 16.4 (gravação com CPU limitada no Playwright) | Reduzir o raio do desfoque; animar só `transform` e `opacity`; desligar o efeito abaixo de certo desempenho |
+| (Fase 4) Gestos de pinça e arrasto conflitam com a rolagem da página no celular | Passo 16.5 (teste de toque) | Zoom só com dois dedos; um dedo continua rolando a página |
+| (Fase 4) A troca da serifada muda a identidade que o Yuri aprovou | Passo 16.1 (confirmação antes de aplicar) | Manter a serifada atual e aplicar só as regras de espaçamento e entrelinha |
 
 ---
 
@@ -324,4 +392,5 @@ Cada etapa termina com algo **visível**. Cada passo tem **Objetivo / Onde / Ver
 2. Executar **um passo por vez**, respeitando a **Cerca**.
 3. Rodar o **Verificar**. Se não passar, o passo não está concluído.
 4. Marcar `[x]`, atualizar o **Status** no bloco 0 e fazer commit com a mensagem `etapa X.Y: <resumo>`.
-5. Se surgir uma decisão que o plano não previu (ex.: definição de métrica, escolha de fonte), registrar em `docs/decisoes.md` e, se for de julgamento político ou institucional, **perguntar ao Yuri**.
+5. **Antes de começar cada etapa nova, pedir a autorização do Yuri** (regra de 10/11/2026). Dentro de uma etapa autorizada, seguir os passos sem perguntar de novo, salvo decisão de julgamento.
+6. Se surgir uma decisão que o plano não previu (ex.: definição de métrica, escolha de fonte), registrar em `docs/decisoes.md` e, se for de julgamento político ou institucional, **perguntar ao Yuri**.

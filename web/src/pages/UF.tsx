@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import type { Topology } from 'topojson-specification'
 import BarraIdeo from '../components/BarraIdeo'
 import DispersaoTipologia from '../components/DispersaoTipologia'
 import Foto from '../components/Foto'
 import { baixarCsv, pctCsv } from '../csv'
 import MapaUF, { type ItemMapa } from '../components/MapaUF'
-import { api, geo, NOME_TIPO, NOME_UF, TIPO_BASE, type DadosUF, type Meta, type Tipo, type TipoBase } from '../dados'
+import { apiDe, geo, NOME_TIPO, NOME_UF, TIPO_BASE, type DadosUF, type Meta, type Tipo, type TipoBase } from '../dados'
 import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
+import { useCargo } from '../cargo'
+import LinkC, { useNavegarC } from '../components/LinkC'
 
 const METRICAS = [
   { k: -1, rotulo: 'Campo predominante' },
@@ -63,14 +65,15 @@ function LegendaPredominante() {
 }
 
 export default function UF() {
+  const cargo = useCargo()
   const { uf = '' } = useParams()
   const sigla = uf.toUpperCase()
   useTitulo(NOME_UF[sigla] ?? sigla)
   const [d, erro] = useCarregar(
-    () => Promise.all([api.uf(sigla), geo(sigla), api.meta()]).then(([u, t, m]) => ({ u, t, m })),
-    [sigla],
+    () => Promise.all([apiDe(cargo).uf(sigla), geo(sigla), apiDe(cargo).meta()]).then(([u, t, m]) => ({ u, t, m })),
+    [sigla, cargo],
   )
-  if (erro) return <p className="aviso">UF não encontrada ({erro}).</p>
+  if (erro) return <p className="aviso">{cargo === 'estadual' ? `Ainda não há dados de deputados estaduais para ${NOME_UF[sigla] ?? sigla}.` : `UF não encontrada (${erro}).`}</p>
   if (!d) return <p className="aviso">Carregando…</p>
   return <Conteudo u={d.u} topo={d.t} meta={d.m} />
 }
@@ -79,7 +82,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
   const [divisao, setDivisao] = useDivisao()
   const [nivel, setNivel] = useState<'maior' | 'menor'>('menor')
   const [metrica, setMetrica] = useState<Metrica>(-1)
-  const navegar = useNavigate()
+  const navegar = useNavegarC()
   const tipo: Tipo = TIPOS_DIVISAO[divisao][nivel]
   const regioes = u.regioes[tipo]
 
@@ -111,7 +114,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
   return (
     <article>
       <p className="trilha">
-        <Link to="/brasil">Brasil</Link> › {nomeRegiao} › {NOME_UF[u.uf]}
+        <LinkC to="/brasil">Brasil</LinkC> › {nomeRegiao} › {NOME_UF[u.uf]}
       </p>
       <h1>{NOME_UF[u.uf]}</h1>
 
@@ -219,7 +222,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
               {linhas.map(([id, r]) => (
                 <tr key={id}>
                   <td>
-                    <Link to={`/r/${tipo}/${id}`}>{r.nome}</Link>
+                    <LinkC to={`/r/${tipo}/${id}`}>{r.nome}</LinkC>
                   </td>
                   <td className="n">{num(r.validos)}</td>
                   <td>
@@ -228,9 +231,9 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
                   <td>
                     {r.lider && (
                       <>
-                        <Link className="sutil" to={`/candidato/${r.lider[0]}`}>
+                        <LinkC className="sutil" to={`/candidato/${r.lider[0]}`}>
                           {r.lider[1]}
-                        </Link>
+                        </LinkC>
                         <small>
                           {r.lider[2]} · {pct(r.lider[4])}
                         </small>
@@ -259,7 +262,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
                   <td className="com-foto">
                     <Foto sq={e[0]} nome={e[1]} />
                     <span>
-                      <Link to={`/candidato/${e[0]}`}>{e[1]}</Link>
+                      <LinkC to={`/candidato/${e[0]}`}>{e[1]}</LinkC>
                       <small>{e[2]}</small>
                     </span>
                   </td>
@@ -284,9 +287,9 @@ function SecaoTipologia({ u }: { u: DadosUF }) {
     <section>
       <div className="titulo-com-acao">
         <h2>Tipo de base dos eleitos</h2>
-        <Link to="/metodo" className="legenda-tab">
+        <LinkC to="/metodo" className="legenda-tab">
           como é calculado
-        </Link>
+        </LinkC>
       </div>
       {tip.confiabilidade === 'baixa' && (
         <p className="legenda-tab">{NOME_UF[u.uf]} tem poucos municípios: leia a tipologia com cautela.</p>
@@ -302,7 +305,7 @@ function SecaoTipologia({ u }: { u: DadosUF }) {
             <p className="nomes">
               {lista.map((e, i) => (
                 <span key={e[0]}>
-                  <Link to={`/candidato/${e[0]}`}>{e[1]}</Link> <small>{e[2]}</small>
+                  <LinkC to={`/candidato/${e[0]}`}>{e[1]}</LinkC> <small>{e[2]}</small>
                   {i < lista.length - 1 ? ' · ' : ''}
                 </span>
               ))}

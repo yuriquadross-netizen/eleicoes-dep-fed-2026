@@ -4,6 +4,7 @@ import { apiDe, NOME_SIT, NOME_UF, normalizar, type LinhaBusca } from '../dados'
 import { num, useCarregar, useTitulo } from '../formato'
 import { useCargo } from '../cargo'
 import LinkC from '../components/LinkC'
+import Esqueleto from '../components/Esqueleto'
 
 const LIMITE = 200
 
@@ -80,14 +81,14 @@ export default function Busca() {
       </div>
 
       {!linhas ? (
-        <p className="aviso">Carregando…</p>
+        <Esqueleto tipo="tabela" />
       ) : (
         <>
           <p className="contagem">
             {num(resultado.length)} {resultado.length === 1 ? 'candidato' : 'candidatos'}
             {resultado.length > LIMITE && ` · mostrando os ${LIMITE} mais votados`}
           </p>
-          <table className="tabela">
+          <div className="rolagem"><table className="tabela">
             <thead>
               <tr>
                 <th>Candidato</th>
@@ -113,7 +114,7 @@ export default function Busca() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
     </section>

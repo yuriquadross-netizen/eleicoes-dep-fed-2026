@@ -12,6 +12,7 @@ import {
   type DadosUF, type Meta, type Nivel, type TopRegiao,
 } from '../dados'
 import { num, pct, useCarregar, useTitulo } from '../formato'
+import Esqueleto from '../components/Esqueleto'
 
 const TIPOS_VALIDOS: Nivel[] = ['micro', 'meso', 'rgi', 'rgint', 'mun']
 
@@ -31,7 +32,7 @@ export default function Regiao() {
   useTitulo(titulo)
   if (!TIPOS_VALIDOS.includes(nivel)) return <p className="aviso">Recorte desconhecido.</p>
   if (erro) return <p className="aviso">{cargo === 'estadual' ? 'Ainda não há dados de deputados estaduais para esta região.' : `Região não encontrada (${erro}).`}</p>
-  if (!d) return <p className="aviso">Carregando…</p>
+  if (!d) return <Esqueleto />
   return <Conteudo r={d.r} u={d.u} topo={d.t} meta={d.m} />
 }
 
@@ -119,7 +120,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
               Baixar CSV
             </button>
           </div>
-          <table className="tabela">
+          <div className="rolagem"><table className="tabela">
             <thead>
               <tr>
                 <th></th>
@@ -148,7 +149,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
           <p className="legenda-tab" style={{ marginTop: '0.5rem' }}>
             <b>% do local</b>: fatia dos votos válidos daqui que foi para o candidato. <b>% da base</b>: fatia da
             votação total do candidato que veio daqui.
@@ -169,7 +170,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
           {tipoFilho && filhos.length > 0 && (
             <>
               <h2 style={{ marginTop: 0 }}>{NOME_TIPO[tipoFilho].plural}</h2>
-              <table className="tabela">
+              <div className="rolagem"><table className="tabela">
                 <tbody>
                   {filhos.map((f) => (
                     <tr key={f.id}>
@@ -185,7 +186,7 @@ function Conteudo({ r, u, topo, meta }: { r: TopRegiao; u: DadosUF; topo: Topolo
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </>
           )}
         </div>

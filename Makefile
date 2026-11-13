@@ -33,3 +33,8 @@ geo:              ## gera os mapas por UF (web/public/geo/)
 
 fotos:            ## baixa e reduz as fotos dos eleitos (web/public/fotos/)
 	$(PY) pipeline/fotos.py --ano $(ANO) --uf $(UF)
+
+senado:           ## composição do Senado em 2027 (TSE + API do Senado) → data/processed/senado_2027.parquet
+	$(PY) pipeline/baixar.py --ano 2022 && $(PY) pipeline/baixar.py --ano 2026
+	$(PY) pipeline/tabelas.py --ano 2022 --cargo senado && $(PY) pipeline/tabelas.py --ano 2026 --cargo senado
+	$(PY) pipeline/senado.py

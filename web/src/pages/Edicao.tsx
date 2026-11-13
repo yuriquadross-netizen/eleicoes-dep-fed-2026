@@ -104,7 +104,7 @@ export default function Edicao() {
           Nenhum por enquanto. Todos seguem o campo do partido.
         </p>
       ) : (
-        <table className="tabela">
+        <div className="rolagem"><table className="tabela">
           <thead>
             <tr>
               <th>Parlamentar</th>
@@ -128,7 +128,7 @@ export default function Edicao() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </section>
   )

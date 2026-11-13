@@ -1,8 +1,7 @@
 // Hemiciclo: um ponto por cadeira, em fileiras concêntricas, preenchido da esquerda para a direita.
 // Grupos na ordem Esquerda → Centro → Direita; cor = campo (D18). Passar o mouse num assento
-// destaca o partido inteiro e mostra o parlamentar.
+// destaca o partido inteiro e mostra o parlamentar. No toque, o primeiro toque mostra e o segundo abre.
 import { useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { Classe } from '../dados'
 
 export interface Assento {
@@ -11,8 +10,10 @@ export interface Assento {
   partido: string
   uf: string
   classe: Classe | null
-  /** marca visual extra (ex.: suplente em exercício no Senado) */
+  /** marca visual extra (ex.: suplente em exercício no Senado): contorno no assento e linha no tooltip */
   destaque?: string
+  /** linhas extras do tooltip */
+  detalhes?: string[]
 }
 
 const ORDEM_CAMPO: (Classe | null)[] = ['Esquerda', 'Centro', 'Direita', null]
@@ -67,14 +68,23 @@ function ordenar(assentos: Assento[]): Assento[] {
   })
 }
 
-export default function Hemiciclo({ assentos, rotulo }: { assentos: Assento[]; rotulo: string }) {
-  const navegar = useNavigate()
+export default function Hemiciclo({
+  assentos, rotulo, aoAbrir, legendaExtra,
+}: {
+  assentos: Assento[]
+  rotulo: string
+  /** clique no assento; sem ele, o assento só mostra o tooltip */
+  aoAbrir?: (a: Assento) => void
+  legendaExtra?: React.ReactNode
+}) {
   const caixa = useRef<HTMLDivElement>(null)
+  const jaAtivo = useRef(false) // toque: o assento já estava em foco antes deste toque?
   const [hover, setHover] = useState<{ i: number; x: number; y: number } | null>(null)
   const ordenados = useMemo(() => ordenar(assentos), [assentos])
   const { pts, raio } = useMemo(() => posicoes(assentos.length), [assentos.length])
-  const escala = L / 2 - 8
-  const margem = raio * escala + 3 // espaço para o assento inteiro da fileira de baixo
+  // o raio externo deixa espaço para o assento inteiro (mais o destaque do foco) dos dois lados
+  const escala = (L / 2 - 4) / (1 + raio * 1.35)
+  const margem = raio * escala * 1.35 + 3 // idem para a fileira de baixo
   const A = escala + 2 * margem
   const cx = L / 2
   const h = hover ? ordenados[hover.i] : null
@@ -84,8 +94,8 @@ export default function Hemiciclo({ assentos, rotulo }: { assentos: Assento[]; r
   }))
 
   return (
-    <figure className="mapa hemiciclo">
-      <div className="mapa-caixa" ref={caixa} onMouseLeave={() => setHover(null)}>
+    <figure className="mapa hemiciclo" style={{ '--passo': `${Math.min(4, 460 / assentos.length)}ms` } as React.CSSProperties}>
+      <div className="mapa-caixa" ref={caixa} onPointerLeave={(e) => e.pointerType === 'mouse' && setHover(null)}>
         <svg viewBox={`0 0 ${L} ${A}`} role="img" aria-label={rotulo}>
           {pts.map((p, i) => {
             const a = ordenados[i]
@@ -97,12 +107,21 @@ export default function Hemiciclo({ assentos, rotulo }: { assentos: Assento[]; r
                 cy={A - margem - p.y * escala}
                 r={raio * escala}
                 fill={a.classe ? COR[a.classe] : 'var(--tinta-3)'}
-                className={`assento${apagado ? ' apagado' : ''}${a.destaque ? ' marcado' : ''}`}
-                onMouseMove={(e) => {
+                style={{ '--i': i } as React.CSSProperties}
+                className={`assento${apagado ? ' apagado' : ''}${a.destaque ? ' marcado' : ''}${hover?.i === i ? ' foco' : ''}${aoAbrir ? ' clicavel' : ''}`}
+                onPointerDown={(e) => {
+                  jaAtivo.current = e.pointerType === 'mouse' || hover?.i === i
+                  if (e.pointerType !== 'mouse') {
+                    const r = caixa.current!.getBoundingClientRect()
+                    setHover({ i, x: e.clientX - r.left, y: e.clientY - r.top })
+                  }
+                }}
+                onPointerMove={(e) => {
+                  if (e.pointerType !== 'mouse') return
                   const r = caixa.current!.getBoundingClientRect()
                   setHover({ i, x: e.clientX - r.left, y: e.clientY - r.top })
                 }}
-                onClick={() => navegar(`/candidato/${a.sq}`)}
+                onClick={() => jaAtivo.current && aoAbrir?.(a)}
               />
             )
           })}
@@ -119,7 +138,8 @@ export default function Hemiciclo({ assentos, rotulo }: { assentos: Assento[]; r
             <span>
               Bancada do {h.partido} <b>{ordenados.filter((x) => x.partido === h.partido).length}</b>
             </span>
-            {h.destaque && <span>{h.destaque}</span>}
+            {h.detalhes?.map((d) => <span key={d}>{d}</span>)}
+            {h.destaque && <span className="dica-destaque">{h.destaque}</span>}
           </div>
         )}
       </div>
@@ -131,7 +151,12 @@ export default function Hemiciclo({ assentos, rotulo }: { assentos: Assento[]; r
             </span>
           ))}
         </span>
-        <span className="legenda-titulo">Passe o mouse para ver o parlamentar e destacar o partido; clique para abrir o perfil.</span>
+        {legendaExtra}
+        <span className="legenda-titulo">
+          {aoAbrir
+            ? 'Passe o mouse (ou toque) para ver o parlamentar e destacar o partido; clique para abrir o perfil.'
+            : 'Passe o mouse (ou toque) para ver o parlamentar e destacar o partido.'}
+        </span>
       </figcaption>
     </figure>
   )

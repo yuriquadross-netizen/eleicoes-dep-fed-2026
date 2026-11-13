@@ -32,7 +32,9 @@ CROSSWALK_URL = (
 
 CARGO_DEP_FEDERAL = 6
 # Fase 2: cargo como parâmetro. Federal mantém os nomes de arquivo atuais (sufixo vazio).
-CARGOS = {"federal": [6], "estadual": [7, 8]}  # 8 = Deputado Distrital (DF)
+CARGOS = {"federal": [6], "estadual": [7, 8], "senado": [5]}  # 8 = Deputado Distrital (DF)
+CARGOS_SUPLENTE_SENADO = {9: 1, 10: 2}  # consulta_cand: 1º e 2º suplentes da chapa de senador
+SENADO_API = "https://legis.senado.leg.br/dadosabertos"
 
 
 def sufixo(cargo: str) -> str:
@@ -41,8 +43,8 @@ def sufixo(cargo: str) -> str:
 
 
 def pasta_web(ano: int, cargo: str) -> str:
-    """Pasta dos JSON em web/public/data/: "2026" (federal) ou "2026e" (estadual)."""
-    return str(ano) if cargo == "federal" else f"{ano}e"
+    """Pasta dos JSON em web/public/data/: "2026" (federal), "2026e" (estadual), "2026s" (senado)."""
+    return f"{ano}{ {'federal': '', 'estadual': 'e', 'senado': 's'}[cargo] }"
 
 UFS = [
     "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",

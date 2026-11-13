@@ -11,6 +11,9 @@ import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
 import { useCargo } from '../cargo'
 import LinkC, { useNavegarC } from '../components/LinkC'
+import Abas from '../components/Abas'
+import Esqueleto from '../components/Esqueleto'
+import Segmentado from '../components/Segmentado'
 
 const METRICAS = [
   { k: -1, rotulo: 'Campo predominante' },
@@ -74,7 +77,7 @@ export default function UF() {
     [sigla, cargo],
   )
   if (erro) return <p className="aviso">{cargo === 'estadual' ? `Ainda não há dados de deputados estaduais para ${NOME_UF[sigla] ?? sigla}.` : `UF não encontrada (${erro}).`}</p>
-  if (!d) return <p className="aviso">Carregando…</p>
+  if (!d) return <Esqueleto />
   return <Conteudo u={d.u} topo={d.t} meta={d.m} />
 }
 
@@ -142,30 +145,22 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
       </div>
 
       <div className="linha-ctrl">
-        <div className="segmentado" role="group" aria-label="Divisão regional">
-          {(['antiga', 'atual'] as const).map((k) => (
-            <button key={k} aria-pressed={divisao === k} onClick={() => setDivisao(k)}>
-              {TIPOS_DIVISAO[k].rotulo}
-            </button>
-          ))}
-        </div>
+        <Segmentado
+          rotulo="Divisão regional"
+          opcoes={(['antiga', 'atual'] as const).map((k) => ({ k, rotulo: TIPOS_DIVISAO[k].rotulo }))}
+          valor={divisao}
+          aoMudar={setDivisao}
+        />
       </div>
-      <div className="abas" role="tablist">
-        {(['menor', 'maior'] as const).map((n) => (
-          <button key={n} role="tab" aria-selected={nivel === n} onClick={() => setNivel(n)}>
-            {NOME_TIPO[TIPOS_DIVISAO[divisao][n]].plural}
-          </button>
-        ))}
-      </div>
+      <Abas
+        rotulo="Nível regional"
+        opcoes={(['menor', 'maior'] as const).map((n) => ({ k: n, rotulo: NOME_TIPO[TIPOS_DIVISAO[divisao][n]].plural }))}
+        valor={nivel}
+        aoMudar={setNivel}
+      />
 
       <div className="mapa-controles">
-        <div className="segmentado" role="group" aria-label="Colorir mapa por">
-          {METRICAS.map((m) => (
-            <button key={m.k} aria-pressed={metrica === m.k} onClick={() => setMetrica(m.k)}>
-              {m.rotulo}
-            </button>
-          ))}
-        </div>
+        <Segmentado rotulo="Colorir mapa por" opcoes={METRICAS} valor={metrica} aoMudar={setMetrica} />
         <span className="legenda-tab" style={{ margin: 0 }}>
           Clique numa região para ver o top 10.
         </span>
@@ -209,7 +204,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
               Baixar CSV
             </button>
           </div>
-          <table className="tabela">
+          <div className="rolagem"><table className="tabela">
             <thead>
               <tr>
                 <th>{NOME_TIPO[tipo].singular}</th>
@@ -243,7 +238,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
         <div>
           <h2>Eleitos</h2>
@@ -254,7 +249,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
               </span>
             ))}
           </div>
-          <table className="tabela">
+          <div className="rolagem"><table className="tabela">
             <tbody>
               {u.eleitos.map((e, i) => (
                 <tr key={e[0]}>
@@ -270,7 +265,7 @@ function Conteudo({ u, topo, meta }: { u: DadosUF; topo: Topology; meta: Meta })
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </article>

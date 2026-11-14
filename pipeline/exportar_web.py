@@ -307,6 +307,22 @@ def main() -> None:
                      "Classificação: Aliança (config/partidos_ideologia.csv).",
         "fonte": "TSE — dados abertos (votação nominal por município e zona), 1º turno",
     })
+    # Senado em 2027 (só no federal): 81 cadeiras, com o ocupante e a marca de suplente (pipeline/senado.py)
+    caminho_sen = PROCESSED / "senado_2027.parquet"
+    if a.cargo == "federal" and caminho_sen.exists():
+        sen = pd.read_parquet(caminho_sen)
+        nulo = lambda v: v if isinstance(v, str) else None  # noqa: E731
+        gravar(destino / "senado.json", {
+            "cadeiras": [{
+                "sq": int(r.sq_titular), "turma": int(r.turma), "uf": r.uf, "nome": r.ocupante, "partido": r.partido,
+                "classe": classe_partido.get(r.partido), "participacao": r.participacao, "previsto": bool(r.previsto),
+                "titular": r.titular, "desde": r.desde, "motivo": nulo(r.motivo),
+                "suplentes": [x for x in (nulo(r.suplente1), nulo(r.suplente2)) if x],
+            } for r in sen.itertuples()],
+            "fonte": "TSE (eleitos em 2022 e 2026, chapas de suplentes) e Senado Federal, dados abertos "
+                     "(senadores em exercício da turma de 2022).",
+        })
+
     # lista de tudo o que o botão "salvar para usar sem internet" precisa baixar
     publico = WEB_PUBLIC
     arquivos = sorted(

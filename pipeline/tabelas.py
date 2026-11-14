@@ -9,8 +9,9 @@ Saídas em data/processed/ (uma por ano):
   ficam com zero, como na planilha da Aliança. Ver docs/dados.md.
   partido_mun_{ANO}.parquet     partido, federacao, cd_ibge, nominais, legenda   (leitura ideológica)
 
-Uso: python pipeline/tabelas.py --ano 2026 [--uf MG] [--cargo federal|estadual]
+Uso: python pipeline/tabelas.py --ano 2026 [--uf MG] [--cargo federal|estadual|senado]
 Cargo estadual = Deputado Estadual (7) e Deputado Distrital (8, DF); arquivos com sufixo _estadual.
+Cargo senado = Senador (5), sem os suplentes da chapa; arquivos com sufixo _senado.
 """
 from __future__ import annotations
 
@@ -127,8 +128,8 @@ def main() -> None:
         cand[col] = cand[col].fillna(0).astype("int64")
     for k, nome in [("votos", "votos_cand_mun"), ("validos", "validos_mun"), ("partido", "partido_mun")]:
         df = pd.concat(partes[k], ignore_index=True)
-        _salvar(df, nome + sufixo(a.cargo), a.ano, ufs)
-    _salvar(cand, "candidatos" + sufixo(a.cargo), a.ano, ufs)
+        _salvar(df, nome, sufixo(a.cargo), a.ano, ufs)
+    _salvar(cand, "candidatos", sufixo(a.cargo), a.ano, ufs)
 
     # Checagens de consistência
     v = pd.concat(partes["votos"]); val = pd.concat(partes["validos"])
@@ -138,10 +139,9 @@ def main() -> None:
           f"{val.validos.sum():,} votos válidos")
 
 
-def _salvar(df: pd.DataFrame, nome: str, ano: int, ufs: list[str]) -> None:
+def _salvar(df: pd.DataFrame, base: str, suf: str, ano: int, ufs: list[str]) -> None:
     """Mescla com o arquivo existente substituindo só as UFs processadas agora."""
-    base, _, suf = nome.partition("_estadual")
-    caminho = PROCESSED / f"{base}_{ano}{'_estadual' if _ else ''}.parquet"
+    caminho = PROCESSED / f"{base}_{ano}{suf}.parquet"
     col_uf = "uf" if "uf" in df.columns else None
     if caminho.exists():
         antigo = pd.read_parquet(caminho)

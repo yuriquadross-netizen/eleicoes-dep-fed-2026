@@ -4,13 +4,14 @@ import { apiDe, NOME_UF } from '../dados'
 import { num, useCarregar, useTitulo } from '../formato'
 import { nomeDoCargo, useCargo } from '../cargo'
 import LinkC from '../components/LinkC'
+import Esqueleto from '../components/Esqueleto'
 
 export default function Brasil() {
   const cargo = useCargo()
   useTitulo('Estados')
   const [meta, erro] = useCarregar(() => apiDe(cargo).meta(), [cargo])
   if (erro) return <p className="aviso">Não foi possível carregar os dados ({erro}).</p>
-  if (!meta) return <p className="aviso">Carregando…</p>
+  if (!meta) return <Esqueleto />
 
   const total = Object.values(meta.ufs_info).reduce(
     (a, u) => ({ eleitos: a.eleitos + u.eleitos, validos: a.validos + u.validos,

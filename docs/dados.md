@@ -73,3 +73,20 @@ ano,sq_candidato,nome_urna,uf,partido,classe,observacao
 `pipeline/tipologia.py` → `data/processed/tipologia_{ANO}.parquet` (uma linha por candidato com voto):
 `concentracao` (índice G), `moran` e `p_moran` (999 permutações; vizinhança por fronteira comum na malha do geobr, com tolerância de 200 m), `dominancia`, `concentrada`, `dominante`, `tipo`, `pct_*` (percentil entre os eleitos da UF), medianas da UF e `confiabilidade`. Método completo na página `#/metodo` do app.
 
+## Senado (Etapa 13)
+
+**Fontes.** Resultado: `votacao_candidato_munzona`, `detalhe_votacao_munzona` e `votacao_partido_munzona` do TSE, `CD_CARGO = 5` (`tabelas.py --cargo senado`, arquivos `*_{ano}_senado.parquet`). Suplentes e CPF: `consulta_cand_{ano}.zip` (cargos 9 = 1º suplente, 10 = 2º suplente; a chapa casa com o titular por UF + número). Ocupantes atuais: API de dados abertos do Senado, `https://legis.senado.leg.br/dadosabertos` (pede `Accept: application/json`).
+
+**Campos usados da API.** `senador/lista/atual` → `Parlamentar[]` com `IdentificacaoParlamentar` (`CodigoParlamentar`, `NomeParlamentar`, `SiglaPartidoParlamentar`, `UfParlamentar`) e `Mandato` (`DescricaoParticipacao`: "Titular", "1º Suplente" ou "2º Suplente"; `SegundaLegislaturaDoMandato.DataFim`: `2031-01-31` identifica a turma de 2022; `Titular` quando o ocupante é suplente; `Exercicios.Exercicio[]` com `DataInicio` e, se encerrado, `DataFim` e `DescricaoCausaAfastamento`). `senador/{codigo}/mandatos` → os exercícios do titular; o último encerrado dá o motivo da saída (ex.: "Renúncia", "Afastamento do exercício"). A API devolve objeto quando há um item e lista quando há vários.
+
+**Regras de `pipeline/senado.py`.**
+- 54 cadeiras: eleitos em 2026 (2 por UF), partido da eleição. 27 cadeiras: turma de 2022 (1 por UF), com o ocupante e o partido atuais da API. Como há uma cadeira da turma de 2022 por UF, o casamento TSE ↔ API é pela UF.
+- Siglas da API convertidas para as do TSE (`PODEMOS` → `PODE` etc.). Senador sem partido fica sem campo (cinza no hemiciclo).
+- Titular de 2022 eleito para outro cargo em 2026 (cruzamento por CPF, só em memória): a cadeira vai para o 1º suplente que não tenha sido eleito, marcada `previsto = true`; o partido é o do suplente em 2022, convertido quando o partido foi extinto por fusão (PSC → PODE, PTB e Patriota → PRD, PROS → Solidariedade, PMN → Mobiliza, PMB → Democrata, PTC → Agir).
+- "% do local" em 2026, quando cada eleitor dá dois votos: votos do candidato ÷ total de votos válidos para senador (que soma os dois votos), como publica o TSE.
+- O CPF não é gravado em nenhum arquivo versionado nem publicado.
+
+**Saídas.** `data/processed/senado_2027.parquet` (versionado; o build não depende da API) e `web/public/data/2026/senado.json` (gerado por `exportar_web.py` no modo federal). As respostas da API ficam em `data/raw/senado/` (não versionado); `python pipeline/senado.py --forcar` baixa de novo.
+
+**Validação (13/11/2026).** 81 cadeiras, 3 por UF. Suplentes em exercício: MA (Ana Paula Lobato, de Flávio Dino, renúncia) e PI (Jussara Lima, de Wellington Dias, afastamento). Previstos: AM, MG e PR (titulares eleitos governador). Sem partido: RJ (Romário).
+

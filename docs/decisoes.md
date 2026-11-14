@@ -29,4 +29,9 @@ Formato: data · decisão · por quê · quem decidiu. Mudanças de rumo entram 
 | 2026-11-10 | PCB classificado como Esquerda | Só disputou cargos estaduais; regra do Yuri: "Esquerda: todo o restante" | Yuri (regra) |
 | 2026-11-10 | **Fase 4 — refino da interface pelos princípios de design da Apple** (skill `apple-design`) como etapa final (16), para todas as páginas de uma vez; o app continua só claro e as cores dos campos não mudam. Detalhes em PLAN.md, D21–D23 e Etapa 16 | Pedido do Yuri | Yuri |
 | 2026-11-10 | **Regra de trabalho:** avançar etapa a etapa, pedindo a autorização do Yuri antes de começar cada uma | Pedido do Yuri | Yuri |
+| 2026-11-13 | **Etapa 13 concluída**: Senado 2027 com 81 cadeiras; turma de 2022 com ocupante e partido atuais (API do Senado), turma de 2026 pelo TSE; titular eleito para outro cargo → suplente "previsto" | Ver D26 e D27 no PLAN.md | Claude, a validar com o Yuri |
+| 2026-11-13 | **Refino de interface antecipado** (16.1 a 16.4 e parte da 16.6): tokens, tipografia, cabeçalho translúcido, resposta na pressão, esqueletos, molas nos seletores e abas | Pedido do Yuri: "melhore o design do aplicativo… inclua animações onde couber" | Yuri |
+| 2026-11-13 | `motion` usada só pela função `animate` | Orçamento de 40 KB comprimidos (16.4): a camada de React custava +43 KB; a função, +25 KB | Claude |
+| 2026-11-13 | Cor da barra de título do app (theme-color) passa de azul-escuro para o tom de papel | Com o cabeçalho translúcido, a barra de título e o conteúdo viram uma superfície só | Claude, reversível em uma linha |
+| 2026-11-13 | Ambiente de nuvem próprio do repositório (`eleicoes-dep-fed-2026`), com TSE, IBGE, Senado e o endereço do app publicado | A API do Senado e o GitHub Pages eram bloqueados no ambiente Default | Yuri (aprovou o pedido) |
 

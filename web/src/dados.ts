@@ -167,6 +167,28 @@ export function apiDe(cargo: Cargo = 'federal') {
 /** Atalho histórico: dados dos deputados federais. */
 export const api = apiDe('federal')
 
+/** Uma cadeira do Senado em 2027 (pipeline/senado.py). */
+export interface CadeiraSenado {
+  /** SQ do titular eleito (identifica a cadeira) */
+  sq: number
+  turma: 2022 | 2026
+  uf: string
+  /** quem ocupa (ou deve ocupar) a cadeira em 2027 */
+  nome: string
+  partido: string
+  classe: Classe | null
+  participacao: string
+  /** true = previsão: o titular foi eleito para outro cargo em 2026 e o suplente deve assumir */
+  previsto: boolean
+  titular: string
+  desde: string
+  motivo: string | null
+  suplentes: string[]
+}
+
+export const senado = () =>
+  getV<{ cadeiras: CadeiraSenado[]; fonte: string }>(`data/${pastaDados('federal')}`, 'senado.json')
+
 export const NOME_TIPO: Record<Nivel, { singular: string; plural: string }> = {
   micro: { singular: 'Microrregião', plural: 'Microrregiões' },
   meso: { singular: 'Mesorregião', plural: 'Mesorregiões' },

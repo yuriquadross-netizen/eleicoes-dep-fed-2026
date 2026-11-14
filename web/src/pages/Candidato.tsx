@@ -13,6 +13,9 @@ import {
 } from '../dados'
 import { TIPOS_DIVISAO, useDivisao } from '../divisao'
 import { num, pct, useCarregar, useTitulo } from '../formato'
+import Abas from '../components/Abas'
+import Esqueleto from '../components/Esqueleto'
+import Segmentado from '../components/Segmentado'
 
 type Ordem = 'votos' | 'pct_local' | 'pct_base'
 const COL: Record<Ordem, number> = { votos: 1, pct_local: 3, pct_base: 4 }
@@ -28,7 +31,7 @@ export default function Candidato() {
   useTitulo(dados?.p.urna ?? '')
 
   if (erro) return <p className="aviso">Candidato não encontrado entre os {cargo === 'estadual' ? 'deputados estaduais' : 'deputados federais'} ({erro}).</p>
-  if (!dados) return <p className="aviso">Carregando…</p>
+  if (!dados) return <Esqueleto />
   return <Conteudo key={sq} {...dados} />
 }
 
@@ -125,31 +128,26 @@ function Conteudo({ p, uf, topo }: { p: Perfil; uf: DadosUF; topo: Topology }) {
       </div>
       {p.tipologia && <BaseTipologia t={p.tipologia} uf={p.uf} />}
 
-      <div className="abas" role="tablist">
-        {(['micro', 'meso', 'rgi', 'rgint'] as Tipo[]).map((t) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tipo === t}
-            onClick={() => {
-              setTipo(t)
-              setAberto(null)
-            }}
-          >
-            {NOME_TIPO[t].plural}
-          </button>
-        ))}
-      </div>
+      <Abas
+        rotulo="Divisão regional"
+        opcoes={(['micro', 'meso', 'rgi', 'rgint'] as Tipo[]).map((t) => ({ k: t, rotulo: NOME_TIPO[t].plural }))}
+        valor={tipo}
+        aoMudar={(t) => {
+          setTipo(t)
+          setAberto(null)
+        }}
+      />
 
       <div className="mapa-controles">
-        <div className="segmentado" role="group" aria-label="Métrica do mapa">
-          <button aria-pressed={metrica === 'votos'} onClick={() => setMetrica('votos')}>
-            Votos
-          </button>
-          <button aria-pressed={metrica === 'pct_local'} onClick={() => setMetrica('pct_local')}>
-            % do local
-          </button>
-        </div>
+        <Segmentado
+          rotulo="Métrica do mapa"
+          opcoes={[
+            { k: 'votos', rotulo: 'Votos' },
+            { k: 'pct_local', rotulo: '% do local' },
+          ]}
+          valor={metrica}
+          aoMudar={setMetrica}
+        />
         <label className="check">
           <input type="checkbox" checked={verMun} onChange={(e) => setVerMun(e.target.checked)} />
           Detalhar por município
@@ -236,7 +234,7 @@ function TabelaLocais({
           Baixar CSV por município
         </button>
       </div>
-      <table className="tabela">
+      <div className="rolagem"><table className="tabela">
         <thead>
           <tr>
             <th>{NOME_TIPO[tipo].singular}</th>
@@ -282,7 +280,7 @@ function TabelaLocais({
             </Fragment>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </>
   )
 }
